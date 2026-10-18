@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: home-grocery-backend
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: HOST
+        value: 0.0.0.0
+      - key: DB_PATH
+        value: /var/data/homegrocery.db
+      - key: BACKUP_DIR
+        value: /var/data/backups
+      - key: SESSION_TTL_HOURS
+        value: 720
+      - key: MAX_FAILED_ATTEMPTS
+        value: 5
+      - key: LOCKOUT_MINUTES
+        value: 15
+    disk:
+      name: homegrocery-data
+      mountPath: /var/data
+      sizeGB: 1
