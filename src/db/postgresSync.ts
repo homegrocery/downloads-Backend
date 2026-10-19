@@ -90,6 +90,14 @@ export async function initPostgresSync(db: Database.Database, databaseUrl: strin
       console.warn('[NEON SYNC] Warning while checking audit log schema columns:', e.message);
     }
 
+    // Ensure shopping_items allows nullable unit_price and estimated_total
+    try {
+      await client.query('ALTER TABLE shopping_items ALTER COLUMN unit_price DROP NOT NULL');
+      await client.query('ALTER TABLE shopping_items ALTER COLUMN estimated_total DROP NOT NULL');
+    } catch (e: any) {
+      console.warn('[NEON SYNC] Warning while ensuring nullable price columns on shopping_items:', e.message);
+    }
+
     // 3. Check if Neon has data in users
     const userCountRes = await client.query('SELECT COUNT(*) as count FROM users');
     const userCount = parseInt(userCountRes.rows[0].count, 10);
