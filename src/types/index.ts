@@ -47,8 +47,8 @@ export interface ShoppingItem {
   quantity: number;
   unit: string;
   category: string;
-  unit_price: number;
-  estimated_total: number;
+  unit_price: number | null;
+  estimated_total: number | null;
   is_purchased: number;
   display_order: number;
   notes: string | null;

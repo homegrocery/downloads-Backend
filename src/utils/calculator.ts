@@ -1,6 +1,6 @@
 export interface ItemCalculationInput {
   quantity: number;
-  unitPrice: number;
+  unitPrice?: number | null;
   isPurchased?: boolean | number;
 }
 
@@ -19,8 +19,15 @@ export interface ListTotalsResult {
 /**
  * Calculate line item total using integer cents to prevent floating-point anomalies.
  */
-export function calculateLineTotal(quantity: number, unitPrice: number): number {
-  if (isNaN(quantity) || quantity < 0 || isNaN(unitPrice) || unitPrice < 0) {
+export function calculateLineTotal(quantity: number, unitPrice?: number | null): number {
+  if (
+    unitPrice === null ||
+    unitPrice === undefined ||
+    isNaN(unitPrice) ||
+    isNaN(quantity) ||
+    quantity < 0 ||
+    unitPrice < 0
+  ) {
     return 0;
   }
   const qtyCents = Math.round(quantity * 1000); // 3 decimals for fractional weights like 0.250 kg
@@ -41,7 +48,8 @@ export function calculateListTotals(
   let purchasedCount = 0;
 
   for (const item of items) {
-    const lineTotal = calculateLineTotal(item.quantity, item.unitPrice);
+    const isPriced = item.unitPrice !== null && item.unitPrice !== undefined && !isNaN(Number(item.unitPrice));
+    const lineTotal = isPriced ? calculateLineTotal(item.quantity, Number(item.unitPrice)) : 0;
     const lineCents = Math.round(lineTotal * 100);
     estimatedTotalCents += lineCents;
 

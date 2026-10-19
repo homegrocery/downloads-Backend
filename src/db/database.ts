@@ -65,6 +65,45 @@ export function initDatabase(dbFilePath?: string): Database.Database {
     // ignore
   }
 
+  // Ensure shopping_items allows nullable unit_price and estimated_total
+  try {
+    const itemsInfo = db.prepare("PRAGMA table_info(shopping_items)").all() as Array<{ name: string; notnull: number }>;
+    const priceCol = itemsInfo.find(col => col.name === 'unit_price');
+    if (priceCol && priceCol.notnull === 1) {
+      db.exec(`
+        PRAGMA foreign_keys=OFF;
+        CREATE TABLE IF NOT EXISTS shopping_items_upgrade (
+          id TEXT PRIMARY KEY,
+          list_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          name_mr TEXT,
+          quantity REAL NOT NULL DEFAULT 1.0,
+          unit TEXT NOT NULL DEFAULT 'kg',
+          category TEXT NOT NULL DEFAULT 'Kitchen Essentials',
+          unit_price REAL DEFAULT NULL,
+          estimated_total REAL DEFAULT NULL,
+          is_purchased INTEGER NOT NULL DEFAULT 0,
+          display_order INTEGER NOT NULL DEFAULT 0,
+          notes TEXT,
+          version INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        INSERT INTO shopping_items_upgrade SELECT * FROM shopping_items;
+        DROP TABLE shopping_items;
+        ALTER TABLE shopping_items_upgrade RENAME TO shopping_items;
+        CREATE INDEX IF NOT EXISTS idx_items_list ON shopping_items(list_id);
+        CREATE INDEX IF NOT EXISTS idx_items_user ON shopping_items(user_id);
+        PRAGMA foreign_keys=ON;
+      `);
+    }
+  } catch {
+    // ignore
+  }
+
   // Ensure recovery and admin tables exist on existing databases
   try {
     db.exec(`

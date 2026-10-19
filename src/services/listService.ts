@@ -183,7 +183,7 @@ export class ListService {
 
       for (const item of source.items) {
         const newItemId = generateId();
-        const estTotal = calculateLineTotal(item.quantity, item.unit_price);
+        const estTotal = item.unit_price !== null && item.unit_price !== undefined ? calculateLineTotal(item.quantity, item.unit_price) : null;
         insertItem.run(
           newItemId,
           newListId,
@@ -244,8 +244,9 @@ export class ListService {
     const qty = Math.max(0.01, Number(data.quantity) || 1);
     const unit = (data.unit || 'kg').trim();
     const category = (data.category || 'Kitchen Essentials').trim();
-    const price = Math.max(0, Number(data.unitPrice) || 0);
-    const estimatedTotal = calculateLineTotal(qty, price);
+    const hasPrice = data.unitPrice !== undefined && data.unitPrice !== null && (data.unitPrice as any) !== '' && !isNaN(Number(data.unitPrice));
+    const price = hasPrice ? Math.max(0, Number(data.unitPrice)) : null;
+    const estimatedTotal = price !== null ? calculateLineTotal(qty, price) : null;
     const now = new Date().toISOString();
     const itemId = generateId();
 
@@ -325,8 +326,18 @@ export class ListService {
     const qty = data.quantity !== undefined ? Math.max(0.01, Number(data.quantity)) : item.quantity;
     const unit = data.unit !== undefined ? data.unit.trim() : item.unit;
     const category = data.category !== undefined ? data.category.trim() : item.category;
-    const price = data.unitPrice !== undefined ? Math.max(0, Number(data.unitPrice)) : item.unit_price;
-    const estimatedTotal = calculateLineTotal(qty, price);
+    let price: number | null;
+    if (data.unitPrice !== undefined) {
+      if (data.unitPrice === null || (data.unitPrice as any) === '' || isNaN(Number(data.unitPrice))) {
+        price = null;
+      } else {
+        price = Math.max(0, Number(data.unitPrice));
+      }
+    } else {
+      // Preserves existing price when editing other fields
+      price = item.unit_price;
+    }
+    const estimatedTotal = price !== null ? calculateLineTotal(qty, price) : null;
     const isPurchased = data.isPurchased !== undefined ? (data.isPurchased ? 1 : 0) : item.is_purchased;
     const displayOrder = data.displayOrder !== undefined ? Number(data.displayOrder) : item.display_order;
     const notes = data.notes !== undefined ? data.notes : item.notes;
