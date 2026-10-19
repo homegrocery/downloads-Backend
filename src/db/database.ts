@@ -61,6 +61,21 @@ export function initDatabase(dbFilePath?: string): Database.Database {
     if (tableInfo.length > 0 && !tableInfo.some(col => col.name === 'role')) {
       db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'");
     }
+    if (tableInfo.length > 0 && !tableInfo.some(col => col.name === 'last_login_at')) {
+      db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT DEFAULT NULL");
+      try {
+        db.exec(`
+          UPDATE users
+          SET last_login_at = (
+            SELECT MAX(s.created_at) FROM authentication_sessions s WHERE s.user_id = users.id AND s.created_at > users.created_at
+          )
+          WHERE last_login_at IS NULL
+            AND EXISTS (SELECT 1 FROM authentication_sessions s WHERE s.user_id = users.id AND s.created_at > users.created_at)
+        `);
+      } catch {
+        // ignore if sessions table not yet created
+      }
+    }
   } catch {
     // ignore
   }

@@ -98,6 +98,21 @@ export async function initPostgresSync(db: Database.Database, databaseUrl: strin
       console.warn('[NEON SYNC] Warning while ensuring nullable price columns on shopping_items:', e.message);
     }
 
+    // Ensure users table has last_login_at column in Neon PostgreSQL and populate historical records
+    try {
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ');
+      await client.query(`
+        UPDATE users
+        SET last_login_at = (
+          SELECT MAX(s.created_at) FROM authentication_sessions s WHERE s.user_id = users.id AND s.created_at > users.created_at
+        )
+        WHERE last_login_at IS NULL
+          AND EXISTS (SELECT 1 FROM authentication_sessions s WHERE s.user_id = users.id AND s.created_at > users.created_at)
+      `);
+    } catch (e: any) {
+      console.warn('[NEON SYNC] Warning while checking last_login_at on users:', e.message);
+    }
+
     // 3. Check if Neon has data in users
     const userCountRes = await client.query('SELECT COUNT(*) as count FROM users');
     const userCount = parseInt(userCountRes.rows[0].count, 10);

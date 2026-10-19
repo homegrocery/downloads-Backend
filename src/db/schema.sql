@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     locked_until TEXT,
     pin_length INTEGER NOT NULL DEFAULT 6,
     role TEXT NOT NULL DEFAULT 'user',
+    last_login_at TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );

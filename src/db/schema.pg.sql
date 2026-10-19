@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
     locked_until TIMESTAMPTZ,
     pin_length INTEGER NOT NULL DEFAULT 6,
     role VARCHAR(20) NOT NULL DEFAULT 'user',
+    last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL
 );

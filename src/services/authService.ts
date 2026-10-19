@@ -178,12 +178,13 @@ export class AuthService {
       throw new Error('INVALID_CREDENTIALS: Invalid mobile number or PIN');
     }
 
-    // Successful login: reset attempts and lock
+    // Successful login: reset attempts, clear lock, and record genuine last_login_at
+    const loginIso = now.toISOString();
     db.prepare(`
       UPDATE users
-      SET failed_login_attempts = 0, locked_until = NULL, updated_at = ?
+      SET failed_login_attempts = 0, locked_until = NULL, last_login_at = ?, updated_at = ?
       WHERE id = ?
-    `).run(now.toISOString(), user.id);
+    `).run(loginIso, loginIso, user.id);
 
     // Create session
     const { rawToken, tokenHash } = generateSessionToken();
@@ -194,7 +195,7 @@ export class AuthService {
       INSERT INTO authentication_sessions (
         id, user_id, token_hash, device_info, expires_at, created_at, last_active_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(sessionId, user.id, tokenHash, data.deviceInfo || null, expiresAt, now.toISOString(), now.toISOString());
+    `).run(sessionId, user.id, tokenHash, data.deviceInfo || null, expiresAt, loginIso, loginIso);
 
     const safeUser: SafeUser = {
       id: user.id,
@@ -205,6 +206,7 @@ export class AuthService {
       locked_until: null,
       pin_length: userPinLength,
       role: (user.role || 'user') as 'user' | 'admin',
+      last_login_at: loginIso,
       created_at: user.created_at,
       updated_at: user.updated_at
     };

@@ -9,6 +9,7 @@ export interface User {
   locked_until: string | null;
   pin_length: number;
   role: 'user' | 'admin';
+  last_login_at?: string | null;
   created_at: string;
   updated_at: string;
 }
