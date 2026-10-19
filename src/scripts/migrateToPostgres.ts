@@ -22,24 +22,13 @@ export async function runPostgresMigration(options: MigrationOptions = {}) {
 
   const databaseUrl = options.databaseUrl || process.env.DATABASE_URL;
 
-  console.log('='.repeat(70));
-  console.log('HOME GROCERY — SQLITE TO NEON POSTGRESQL MIGRATION');
-  console.log('='.repeat(70));
-  console.log(`Source SQLite Backup: ${sourcePath}`);
-
-  if (!fs.existsSync(sourcePath)) {
-    throw new Error(`SOURCE_BACKUP_NOT_FOUND: Could not find verified backup at ${sourcePath}`);
-  }
-
   if (!databaseUrl || !databaseUrl.trim()) {
     throw new Error('DATABASE_URL_REQUIRED: Please set the DATABASE_URL environment variable to your Neon connection string.');
   }
 
-  // 1. Verify SQLite Source
-  const sqlite = new Database(sourcePath, { readonly: true });
-  const integrity = sqlite.pragma('integrity_check') as Array<{ integrity_check: string }>;
-  console.log(`Source SQLite integrity: ${JSON.stringify(integrity)}`);
-
+  console.log('='.repeat(70));
+  console.log('HOME GROCERY — SQLITE TO NEON POSTGRESQL MIGRATION');
+  console.log('='.repeat(70));
   const tablesToMigrate = [
     'users',
     'shopping_lists',
@@ -51,11 +40,47 @@ export async function runPostgresMigration(options: MigrationOptions = {}) {
     'admin_audit_logs'
   ];
 
+  let sqlite: Database.Database | null = null;
+  const sourceRecords: Record<string, any[]> = {};
   const sourceCounts: Record<string, number> = {};
-  for (const table of tablesToMigrate) {
-    const row = sqlite.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number };
-    sourceCounts[table] = row.count;
-    console.log(`  Source ${table}: ${row.count} records`);
+
+  if (fs.existsSync(sourcePath)) {
+    console.log(`Source SQLite Backup: ${sourcePath}`);
+    sqlite = new Database(sourcePath, { readonly: true });
+    const integrity = sqlite.pragma('integrity_check') as Array<{ integrity_check: string }>;
+    console.log(`Source SQLite integrity: ${JSON.stringify(integrity)}`);
+    for (const table of tablesToMigrate) {
+      const rows = sqlite.prepare(`SELECT * FROM ${table}`).all();
+      sourceRecords[table] = rows;
+      sourceCounts[table] = rows.length;
+      console.log(`  Source ${table}: ${rows.length} records`);
+    }
+  } else {
+    const seedCandidates = [
+      path.resolve(process.cwd(), 'src', 'db', 'verifiedBackupSeed.json'),
+      path.resolve(process.cwd(), 'dist', 'db', 'verifiedBackupSeed.json'),
+      path.resolve(__dirname, '..', 'db', 'verifiedBackupSeed.json'),
+      path.resolve(__dirname, 'verifiedBackupSeed.json')
+    ];
+    let seedPath = '';
+    for (const p of seedCandidates) {
+      if (fs.existsSync(p)) {
+        seedPath = p;
+        break;
+      }
+    }
+    if (seedPath) {
+      console.log(`Source Verified Backup Seed: ${seedPath}`);
+      const rawSeed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+      for (const table of tablesToMigrate) {
+        const rows = rawSeed[table] || [];
+        sourceRecords[table] = rows;
+        sourceCounts[table] = rows.length;
+        console.log(`  Source ${table}: ${rows.length} records`);
+      }
+    } else {
+      throw new Error(`SOURCE_BACKUP_NOT_FOUND: Could not find verified backup at ${sourcePath} or verifiedBackupSeed.json`);
+    }
   }
 
   // 2. Connect to Target Neon PostgreSQL
@@ -110,7 +135,7 @@ export async function runPostgresMigration(options: MigrationOptions = {}) {
       await client.query('BEGIN');
 
       for (const table of tablesToMigrate) {
-        const rows = sqlite.prepare(`SELECT * FROM ${table}`).all();
+        const rows = sourceRecords[table] || [];
         if (rows.length === 0) continue;
 
         const columns = Object.keys(rows[0] as object);
@@ -167,7 +192,9 @@ export async function runPostgresMigration(options: MigrationOptions = {}) {
     console.log('\nMigration completed with 100% data fidelity!');
   } finally {
     client.release();
-    sqlite.close();
+    if (sqlite) {
+      try { sqlite.close(); } catch {}
+    }
     await pool.end();
   }
 }

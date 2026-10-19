@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc && node -e \"const fs = require('fs'); fs.mkdirSync('dist/db', {recursive: true}); fs.copyFileSync('src/db/schema.sql', 'dist/db/schema.sql'); fs.copyFileSync('src/db/schema.pg.sql', 'dist/db/schema.pg.sql');\"",
+    "build": "tsc && node -e \"const fs = require('fs'); fs.mkdirSync('dist/db', {recursive: true}); fs.copyFileSync('src/db/schema.sql', 'dist/db/schema.sql'); fs.copyFileSync('src/db/schema.pg.sql', 'dist/db/schema.pg.sql'); if (fs.existsSync('src/db/verifiedBackupSeed.json')) fs.copyFileSync('src/db/verifiedBackupSeed.json', 'dist/db/verifiedBackupSeed.json');\"",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "vitest run",

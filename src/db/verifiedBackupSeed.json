@@ -1,0 +1,1172 @@
+{
+  "users": [
+    {
+      "id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "mobile_number": "9356755100",
+      "pin_hash": "9b96a93dee86c8ba2466b337a9af129027162b704c4804f2e34816091203acf7156ef811035c131a1518129df49158a2061392d325fb6df9c058b6851df95541",
+      "salt": "35818cdf27524f88c3ed8c7045c4103ac548efd56c94ed2c13aacbbe3763f1eb",
+      "full_name": "Santosh Koli (Owner)",
+      "preferred_language": "mr",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-17T06:34:29.783Z",
+      "updated_at": "2026-10-18T16:36:52.110Z",
+      "pin_length": 6,
+      "role": "admin"
+    },
+    {
+      "id": "516d6df7-23db-465d-bf79-e77883eb5902",
+      "mobile_number": "9999999999",
+      "pin_hash": "bfbb55bd42f563d848c67ec024e281ab26bdf1584851b3bec048dc8ef69fc173dbf0a3d4dfe9663cfd8e76916efddabeb4403c0a175c01ef40623764a7b6b3c6",
+      "salt": "6d7d0f829621f7a00f0e2c7c958a941e896b96e87fd24dde2040d1d8165994f0",
+      "full_name": "SANTOSH KOLI",
+      "preferred_language": "en",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-17T15:45:06.639Z",
+      "updated_at": "2026-10-17T15:45:06.639Z",
+      "pin_length": 4,
+      "role": "user"
+    },
+    {
+      "id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "mobile_number": "9850336418",
+      "pin_hash": "8f3757590980b14f88a233e6bc683d4344855636e06d883069cbee19542cd36a549795cde6b3679d72085233e65d71d7258896eceaadb9baee40973f6d0f81ac",
+      "salt": "431c8c8bea5e123d217ed0f8abe1d2836f4314a8a44f5ed1c46632b6ae1954ee",
+      "full_name": "SANTOSH KOLI",
+      "preferred_language": "en",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-17T16:33:49.279Z",
+      "updated_at": "2026-10-18T05:52:33.998Z",
+      "pin_length": 4,
+      "role": "user"
+    },
+    {
+      "id": "57021b23-2cda-48cc-bcaf-099afb03bbda",
+      "mobile_number": "9876500005",
+      "pin_hash": "5db9b52c08f25fba0f660a55566d45d496a3ec0d2d669bc330b68193af424fdc8219659c8fa8de09b39e211aae8e5dbc4e3d232ed95f5a6f9cfa2f0686c92a3e",
+      "salt": "f23ccc363bd7c32a33fc27bd7d9b6a6f82184092f03953d251c25e9b6b99388b",
+      "full_name": "Build5 Tester",
+      "preferred_language": "mr",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-18T15:03:43.136Z",
+      "updated_at": "2026-10-18T15:03:43.136Z",
+      "pin_length": 4,
+      "role": "user"
+    },
+    {
+      "id": "8c01417e-6efc-4b03-b64c-e5f3a4a3b79d",
+      "mobile_number": "9699336418",
+      "pin_hash": "77292df75f94e1e2f3c96189ec50d713c11d52898954d31789bab5786ddaa05610290a659097e235ca1a09278d7d8fe750e66148344e277ce656fa686fc93b5b",
+      "salt": "9c63676575cc0219b44949f57073778e7cb5b30cb7b0883a58e7c6a6abebc60d",
+      "full_name": "Santosh Koli",
+      "preferred_language": "en",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-18T15:39:26.682Z",
+      "updated_at": "2026-10-18T15:39:26.682Z",
+      "pin_length": 4,
+      "role": "user"
+    },
+    {
+      "id": "a88284de-7e91-4ee9-b81c-5364fd261905",
+      "mobile_number": "9820095829",
+      "pin_hash": "4b84a4c1fcaffcac43f24fceb6e5e9351702df5e0283a90bf02e752f23d240a8a3ff23f111e09193ab34e47e3be2e294d1c6b31b056ed2fafc79ddd50c1ba392",
+      "salt": "d9cf052202761e605128b260c8c849e1840ea64d73d441b87c8b59b2f3702036",
+      "full_name": "Test E2E User",
+      "preferred_language": "mr",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-19T07:43:49.580Z",
+      "updated_at": "2026-10-19T07:43:49.658Z",
+      "pin_length": 6,
+      "role": "user"
+    },
+    {
+      "id": "d3206261-f73c-4cf4-b114-3dc4fb93d46e",
+      "mobile_number": "9820095883",
+      "pin_hash": "233257784f59f8b055a841c5571d6d9364d3bc1b4d0917f7b88a3ec4834f72540709773d78d10781d5190deb22fcde1771ff9f4977d25b07aa39d302f7af11da",
+      "salt": "4be17e55036ecbee1c96d69b89184fa2e3702b03e3e09dafc7d7377bec967734",
+      "full_name": "Test E2E User",
+      "preferred_language": "mr",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-19T07:44:43.289Z",
+      "updated_at": "2026-10-19T07:44:43.362Z",
+      "pin_length": 6,
+      "role": "user"
+    },
+    {
+      "id": "bb6c0f6d-d582-43cd-9ec1-91afecc78f54",
+      "mobile_number": "9820095903",
+      "pin_hash": "06b7b6dcccd389b13650cf09e50b2b39227fd487ffc8153b3008edd66c20362ec5b8a263dcb3464534e4467e01f6ef53d3c9052e726d6b24d1f61223f35b6aaf",
+      "salt": "fee690bc0b8e416b0efc45140d5b5992c1339c3d1bd103383c9c2a0db43d09b6",
+      "full_name": "Test E2E User",
+      "preferred_language": "mr",
+      "failed_login_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-19T07:45:03.671Z",
+      "updated_at": "2026-10-19T07:45:03.745Z",
+      "pin_length": 6,
+      "role": "user"
+    }
+  ],
+  "shopping_lists": [
+    {
+      "id": "1ea4fe61-8e5f-4196-9677-3a14a6b108fd",
+      "user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "title": "House holed",
+      "month_year": "2026-10",
+      "monthly_budget": 4000.0,
+      "notes": null,
+      "is_archived": 0,
+      "version": 1,
+      "created_at": "2026-10-17T06:35:27.981Z",
+      "updated_at": "2026-10-17T06:35:27.981Z"
+    },
+    {
+      "id": "4a2d39c7-65da-4fbd-a6b4-dd5ff5192210",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "title": "Household",
+      "month_year": "2026-10",
+      "monthly_budget": 5000.0,
+      "notes": null,
+      "is_archived": 0,
+      "version": 1,
+      "created_at": "2026-10-18T05:53:07.756Z",
+      "updated_at": "2026-10-18T05:53:07.756Z"
+    },
+    {
+      "id": "01f1b9f5-2238-47ac-b058-7b2890ab0e29",
+      "user_id": "57021b23-2cda-48cc-bcaf-099afb03bbda",
+      "title": "Grocery List (ऑक्टोबर 2026)",
+      "month_year": "2026-10",
+      "monthly_budget": 5000.0,
+      "notes": null,
+      "is_archived": 0,
+      "version": 4,
+      "created_at": "2026-10-18T15:17:19.227Z",
+      "updated_at": "2026-10-18T15:39:58.235Z"
+    },
+    {
+      "id": "906e64fb-ea86-41da-a669-cfab24d9ca4e",
+      "user_id": "d3206261-f73c-4cf4-b114-3dc4fb93d46e",
+      "title": "दिवाळी किराणा यादी (Diwali Grocery)",
+      "month_year": "2026-10",
+      "monthly_budget": 5000.0,
+      "notes": null,
+      "is_archived": 0,
+      "version": 1,
+      "created_at": "2026-10-19T07:44:43.400Z",
+      "updated_at": "2026-10-19T07:44:43.400Z"
+    },
+    {
+      "id": "61fd7f86-712e-4d60-a893-1b8acc259c69",
+      "user_id": "bb6c0f6d-d582-43cd-9ec1-91afecc78f54",
+      "title": "दिवाळी किराणा यादी (Diwali Grocery)",
+      "month_year": "2026-10",
+      "monthly_budget": 5000.0,
+      "notes": null,
+      "is_archived": 0,
+      "version": 2,
+      "created_at": "2026-10-19T07:45:03.786Z",
+      "updated_at": "2026-10-19T07:45:03.788Z"
+    }
+  ],
+  "shopping_items": [
+    {
+      "id": "433452b0-c3b6-4dcf-8688-83c64886bd4a",
+      "list_id": "01f1b9f5-2238-47ac-b058-7b2890ab0e29",
+      "user_id": "57021b23-2cda-48cc-bcaf-099afb03bbda",
+      "name": "Wheat Flour",
+      "name_mr": null,
+      "quantity": 1.0,
+      "unit": "kg",
+      "category": "स्वयंपाकघरातील साहित्य",
+      "unit_price": 45.0,
+      "estimated_total": 45.0,
+      "is_purchased": 1,
+      "display_order": 0,
+      "notes": null,
+      "version": 3,
+      "created_at": "2026-10-18T15:25:06.860Z",
+      "updated_at": "2026-10-18T15:39:58.235Z"
+    },
+    {
+      "id": "a5cffeb9-3113-4ed7-907c-510d29a095d1",
+      "list_id": "61fd7f86-712e-4d60-a893-1b8acc259c69",
+      "user_id": "bb6c0f6d-d582-43cd-9ec1-91afecc78f54",
+      "name": "बासमती तांदूळ (Basmati Rice)",
+      "name_mr": null,
+      "quantity": 5.0,
+      "unit": "kg",
+      "category": "Grains & Flours",
+      "unit_price": 90.0,
+      "estimated_total": 450.0,
+      "is_purchased": 0,
+      "display_order": 0,
+      "notes": null,
+      "version": 1,
+      "created_at": "2026-10-19T07:45:03.788Z",
+      "updated_at": "2026-10-19T07:45:03.788Z"
+    }
+  ],
+  "authentication_sessions": [
+    {
+      "id": "3e1ff315-4be2-421f-86c7-f66e4f971b91",
+      "user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "token_hash": "8a089b21fbd167497efee885cd82adc9bfbce73735f9e729c3369009bccea800",
+      "device_info": "Admin ERP Web (PIN Changed)",
+      "expires_at": "2026-11-17T16:36:40.494Z",
+      "created_at": "2026-10-18T16:36:40.494Z",
+      "last_active_at": "2026-10-18T16:36:43.187Z"
+    },
+    {
+      "id": "772c32d8-098a-424b-9a80-43558464730a",
+      "user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "token_hash": "7d4a4a63c25c27b91e05a7afd1286872edc9e067e4fb9c7fb23b845841379022",
+      "device_info": "Owner-Admin Web Console",
+      "expires_at": "2026-11-17T16:36:44.430Z",
+      "created_at": "2026-10-18T16:36:44.430Z",
+      "last_active_at": "2026-10-18T16:36:47.492Z"
+    },
+    {
+      "id": "e34d2c5b-7ffd-43fb-9bac-fe6391ff4553",
+      "user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "token_hash": "12107851ff860f9446be3e4c67173374d3582db4b8207e985ae19634b90abe50",
+      "device_info": "Owner-Admin Web Console",
+      "expires_at": "2026-11-17T16:36:48.445Z",
+      "created_at": "2026-10-18T16:36:48.445Z",
+      "last_active_at": "2026-10-18T16:36:51.332Z"
+    },
+    {
+      "id": "66f825d1-14ff-4b7d-b2fb-412243a33553",
+      "user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "token_hash": "31c90c3d2c92589e8e3094b4a4dc0728f1d0b1bd21bcc994fca99a63ca0c5f01",
+      "device_info": "Owner-Admin Web Console",
+      "expires_at": "2026-11-17T16:36:52.110Z",
+      "created_at": "2026-10-18T16:36:52.110Z",
+      "last_active_at": "2026-10-18T16:37:07.835Z"
+    },
+    {
+      "id": "965cec4a-c6f3-471f-bb7a-1e904cb41b13",
+      "user_id": "a88284de-7e91-4ee9-b81c-5364fd261905",
+      "token_hash": "e3a56a90fe765bc65c12ec35ff68335d7deedaa0a92c43e42500397e1b0a05ca",
+      "device_info": null,
+      "expires_at": "2026-11-18T07:43:49.653Z",
+      "created_at": "2026-10-19T07:43:49.580Z",
+      "last_active_at": "2026-10-19T07:43:49.712Z"
+    },
+    {
+      "id": "477eb8b5-dd3a-4e0f-ac82-a7078811a006",
+      "user_id": "a88284de-7e91-4ee9-b81c-5364fd261905",
+      "token_hash": "f5fe132374e7e7a931b90463ec58c0f34bf792d942a6a92e6b66e796790ca5ba",
+      "device_info": null,
+      "expires_at": "2026-11-18T07:43:49.658Z",
+      "created_at": "2026-10-19T07:43:49.658Z",
+      "last_active_at": "2026-10-19T07:43:49.658Z"
+    },
+    {
+      "id": "8d464189-e02a-4c31-a860-3d987e4b1c13",
+      "user_id": "d3206261-f73c-4cf4-b114-3dc4fb93d46e",
+      "token_hash": "769eac040c00eb59e5d3f3ec079f488e3bd7741c7d87ca09baa9af40f803b9f3",
+      "device_info": null,
+      "expires_at": "2026-11-18T07:44:43.359Z",
+      "created_at": "2026-10-19T07:44:43.289Z",
+      "last_active_at": "2026-10-19T07:44:43.400Z"
+    },
+    {
+      "id": "22e15a59-2636-460b-a4b3-7a56c7bca579",
+      "user_id": "d3206261-f73c-4cf4-b114-3dc4fb93d46e",
+      "token_hash": "b7fd1dc65f96edf953f271d70946830e5c3d9a97e059b8ab6efe7184cd954b6a",
+      "device_info": null,
+      "expires_at": "2026-11-18T07:44:43.362Z",
+      "created_at": "2026-10-19T07:44:43.362Z",
+      "last_active_at": "2026-10-19T07:44:43.362Z"
+    },
+    {
+      "id": "e4ec5a4b-734b-490a-ab24-7041ab0bb4c3",
+      "user_id": "bb6c0f6d-d582-43cd-9ec1-91afecc78f54",
+      "token_hash": "28e3f748b187ca193b2b6aa4c8b109561682fa0b775f4ccf565ce8dc2ed16ad4",
+      "device_info": null,
+      "expires_at": "2026-11-18T07:45:03.742Z",
+      "created_at": "2026-10-19T07:45:03.671Z",
+      "last_active_at": "2026-10-19T07:45:03.790Z"
+    },
+    {
+      "id": "634d3f88-bdc2-4606-8430-48aa65ad6e55",
+      "user_id": "bb6c0f6d-d582-43cd-9ec1-91afecc78f54",
+      "token_hash": "3a9f23f523f69e1d9e96fb0698a2cffdc4e283b4f3e3dc12ab81101e0ee1885c",
+      "device_info": null,
+      "expires_at": "2026-11-18T07:45:03.745Z",
+      "created_at": "2026-10-19T07:45:03.745Z",
+      "last_active_at": "2026-10-19T07:45:03.745Z"
+    }
+  ],
+  "recovery_codes": [
+    {
+      "id": "394b9a31-bfce-479a-aec8-920c67d3771e",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "code_hash": "1fd8669efba1a18b193a62544f3b84c0b74430457a627fa55303c838da708d5d0c0b5139e790ec241b6fc5fed7cc64ea9e3ea39a3ad83f3ed20ec9ceeb5493d8",
+      "salt": "09022dac9475f3212985f8e5bb7f4b671b551021801fa5b4b4e59910216c9ec9",
+      "status": "REPLACED",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-17T16:33:49.279Z",
+      "updated_at": "2026-10-17T17:28:30.289Z",
+      "consumed_at": null
+    },
+    {
+      "id": "f2f921c7-8ed3-4334-9d34-61ee9f69c270",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "code_hash": "0e09e6c625dbdc754805c82e2abbeecfdb110b5082c06a16255f66390e62e0c5f305c725088078abd936c874c7d7b335de04c768d8967bd13f57d582d42e34c0",
+      "salt": "647a4a98b5dc582b0327ca044e042e58d8d9b5697ef6a0d98b700a84c7d4b385",
+      "status": "REPLACED",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-17T17:28:30.289Z",
+      "updated_at": "2026-10-18T07:03:40.755Z",
+      "consumed_at": null
+    },
+    {
+      "id": "e367e143-0bec-445f-8242-66dd8214d651",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "code_hash": "368507b504d915a79f060de6d7b3e08f3f8d914a07fa947f8496352b2d3d4d63e1287b1bf2530831b6697fa42d2ab56a8246ff3a6c1eb45fdf2dddd315d01fcf",
+      "salt": "5dcb44f94919c0ee1b6bd79b77cd6a819838366f44c85812cfb799d42039c185",
+      "status": "TEMPORARY",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-17T19:18:10.086Z",
+      "updated_at": "2026-10-17T19:18:10.086Z",
+      "consumed_at": null
+    },
+    {
+      "id": "949d46b7-0c0a-446b-825e-7368e423d9f6",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "code_hash": "a281bb127f0469d7e302b9d97c77c0572a4afbbfc6b24ec902bf174887788cfdc7ca380b47e800844d27cf4b85ac630d909b908606a7e032dfc9902f07e37706",
+      "salt": "8f10c1e6dcf2bd6bc10eb1b727e364191efd444d1a55cd7e5746fd23556db207",
+      "status": "ACTIVE",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-18T07:03:40.755Z",
+      "updated_at": "2026-10-18T07:03:40.755Z",
+      "consumed_at": null
+    },
+    {
+      "id": "c3d927f5-5d03-41ac-9086-989c1fc1c147",
+      "user_id": "57021b23-2cda-48cc-bcaf-099afb03bbda",
+      "code_hash": "814bf770489b52a742c169fdd556fb50dd5f1f923454a52593c2853f5dfdb9457981063780092bde9baa6f4ed15bb7c91916c075269328ed7db0fb3cfef9d2b2",
+      "salt": "57017078a82974922d065c213eb9c8002808cd16fbb71a02fcb955fad36821f5",
+      "status": "ACTIVE",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-18T15:03:43.136Z",
+      "updated_at": "2026-10-18T15:50:34.404Z",
+      "consumed_at": null
+    },
+    {
+      "id": "1464a4db-0933-4738-928a-d044b2867c37",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "code_hash": "46b5adadbe970ca698b80d6b287f38be68550e3cc4455d2eb0a08850bc986fd291a3d0f3cbf513a1db24809c4e931c6ff2cc36dc00bc4fe4e8bdf7ea09615548",
+      "salt": "62e820b08928a58675c2a90d124db68165fece3a0168d9a783cc6b54a8782081",
+      "status": "TEMPORARY",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-18T15:37:46.864Z",
+      "updated_at": "2026-10-18T15:37:46.864Z",
+      "consumed_at": null
+    },
+    {
+      "id": "e1555737-07bf-4bb0-a67e-8669882acf04",
+      "user_id": "8c01417e-6efc-4b03-b64c-e5f3a4a3b79d",
+      "code_hash": "f1d1bbd82f9f8fdfb542a0147caa5eff9caa5cd01f157514b05a813556424b68766427593997152aa2b68dd6e8df74c05eab82c9c0a1c36f71bc71dca2dab342",
+      "salt": "8db3a68f51112b223600643d8b7e21055c24fcc6966ee53197b1bd58c8737f36",
+      "status": "ACTIVE",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-18T15:39:26.682Z",
+      "updated_at": "2026-10-18T15:39:26.682Z",
+      "consumed_at": null
+    },
+    {
+      "id": "87a72573-f925-491e-9e74-4be8b1af4f20",
+      "user_id": "a88284de-7e91-4ee9-b81c-5364fd261905",
+      "code_hash": "a9c79925d3bffa89863efbbd4c322540277a9d7d83c11fd8db5ef5b4efd0010f5c9f3a3eb13a611e3719af8beaf6118d6a65477c2fa76f0be5ea50d9fc187768",
+      "salt": "21d47f5117d8b1f73ff8f099ef1cfe3a9f96416c03f2bd53dd8e47a86f9cb0b2",
+      "status": "ACTIVE",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-19T07:43:49.580Z",
+      "updated_at": "2026-10-19T07:43:49.580Z",
+      "consumed_at": null
+    },
+    {
+      "id": "a9a07135-5fac-4063-85dd-d05b0a9069a9",
+      "user_id": "d3206261-f73c-4cf4-b114-3dc4fb93d46e",
+      "code_hash": "d041fdada81062c9f4fe1126f43af74944fd29121054b1c27dbafcde172b07f836118b13fa2a50fc73803f1f63727a9984389eea1726096f03d937e76912b858",
+      "salt": "24d9841908dcb0989d7765b5e214c2120076ce07e42f868bd1279e1eaf9fbf9f",
+      "status": "ACTIVE",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-19T07:44:43.289Z",
+      "updated_at": "2026-10-19T07:44:43.289Z",
+      "consumed_at": null
+    },
+    {
+      "id": "61c0ef82-088a-4a1b-9100-5e6b44ef0314",
+      "user_id": "bb6c0f6d-d582-43cd-9ec1-91afecc78f54",
+      "code_hash": "8172edf4fe97ff7a6bb19f07e9c362bdea8b5c26388a9ecc0d7b2e3deae9d0411eb06087736c8837265cae0d10c722823c2ab07bcb084d605f071a66731e9419",
+      "salt": "47c7162e73ac1e738bf197797210aadb63fb2535f559e4b8d89928b2da7e1ea4",
+      "status": "ACTIVE",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "created_at": "2026-10-19T07:45:03.671Z",
+      "updated_at": "2026-10-19T07:45:03.671Z",
+      "consumed_at": null
+    }
+  ],
+  "recovery_authorizations": [
+    {
+      "id": "605ff2c1-5e54-468d-a6bc-16d2d534d584",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "token_hash": "22c43b3073999158eb7043cbe581b70d5d1a832b3076aec344e31f3d3b5a27bb",
+      "recovery_code_id": "394b9a31-bfce-479a-aec8-920c67d3771e",
+      "expires_at": "2026-10-17T16:49:09.691Z",
+      "created_at": "2026-10-17T16:34:09.727Z",
+      "consumed_at": null
+    },
+    {
+      "id": "52f83586-7bfb-4aea-b174-b6ae6125c038",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "token_hash": "90ff0687ac689dbfd0dbd6ed92ae9b700f712f480e44fb2fe1d5a39edcf80297",
+      "recovery_code_id": "e367e143-0bec-445f-8242-66dd8214d651",
+      "expires_at": "2026-10-17T19:33:31.886Z",
+      "created_at": "2026-10-17T19:18:32.059Z",
+      "consumed_at": null
+    },
+    {
+      "id": "ba2ee201-d23d-44e7-b6f1-669b1f754b61",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "token_hash": "73e35c42482a68aa9c7759bb4a751b83bcb714d541c85c21de36efad33972f26",
+      "recovery_code_id": "1464a4db-0933-4738-928a-d044b2867c37",
+      "expires_at": "2026-10-18T15:53:06.730Z",
+      "created_at": "2026-10-18T15:38:06.814Z",
+      "consumed_at": null
+    },
+    {
+      "id": "0eccab89-bda5-4d65-9020-08005c530dfb",
+      "user_id": "57021b23-2cda-48cc-bcaf-099afb03bbda",
+      "token_hash": "cc1f99b0e8276866b607d53c2b82e815f29034e1cc81b23dd9c6ee0072495870",
+      "recovery_code_id": "c3d927f5-5d03-41ac-9086-989c1fc1c147",
+      "expires_at": "2026-10-18T16:05:34.358Z",
+      "created_at": "2026-10-18T15:50:34.404Z",
+      "consumed_at": null
+    }
+  ],
+  "recovery_requests": [
+    {
+      "id": "039da4d3-8260-4ab7-a4f5-ce34bfe2ce96",
+      "user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "mobile_number": "9850336418",
+      "request_token_hash": "51de00a1b6b43d9481c34158d245f889ea1f1ea5254bd30fe706dd3745db1de9",
+      "status": "APPROVED",
+      "verification_method": "SECURE_CHANNEL",
+      "verification_notes": null,
+      "approved_code_encrypted": "d3aadf270d711c2e2ca5ee0d690de90278",
+      "approved_code_iv": "33b17550d12e9c1029d2bc53",
+      "approved_code_tag": "fb9cfe8262a490279f2e90d38160c510",
+      "approved_code_hash": "46b5adadbe970ca698b80d6b287f38be68550e3cc4455d2eb0a08850bc986fd291a3d0f3cbf513a1db24809c4e931c6ff2cc36dc00bc4fe4e8bdf7ea09615548",
+      "approved_code_salt": "62e820b08928a58675c2a90d124db68165fece3a0168d9a783cc6b54a8782081",
+      "failed_attempts": 0,
+      "locked_until": null,
+      "expires_at": "2026-10-18T16:07:46.864Z",
+      "created_at": "2026-10-18T15:37:33.886Z",
+      "updated_at": "2026-10-18T15:38:06.814Z",
+      "completed_at": null
+    }
+  ],
+  "admin_audit_logs": [
+    {
+      "id": "1952fdc2-53f0-42a5-8893-882c7a6c217e",
+      "admin_user_id": "1cbaed55-141f-419d-8294-d52180ce726a",
+      "action": "UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT",
+      "target_account_id": "1cbaed55-141f-419d-8294-d52180ce726a",
+      "target_mobile_number": "9876543210",
+      "details": "{\"userRole\":\"user\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:01:34.751Z"
+    },
+    {
+      "id": "08470eed-8676-496d-ba67-10e22facd484",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:01:34.796Z"
+    },
+    {
+      "id": "f107616d-cb68-4340-930b-12f6309ef618",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:01:34.834Z"
+    },
+    {
+      "id": "b6b5aecc-f724-4a0f-8dd2-82fde6088b2d",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:14:27.692Z"
+    },
+    {
+      "id": "f8ffccb7-bf12-4d88-8a35-b1b78118cfbc",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:14:36.654Z"
+    },
+    {
+      "id": "cecf2d2a-2f8c-464c-ac17-7b6834bd47b1",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:22:36.381Z"
+    },
+    {
+      "id": "c926be23-297e-4f91-ae3e-a60494fba645",
+      "admin_user_id": "1cbaed55-141f-419d-8294-d52180ce726a",
+      "action": "UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT",
+      "target_account_id": "1cbaed55-141f-419d-8294-d52180ce726a",
+      "target_mobile_number": "9876543210",
+      "details": "{\"userRole\":\"user\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:22:36.587Z"
+    },
+    {
+      "id": "d8a7ee9b-854e-40bb-a2a8-49b14fef03d4",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:31:37.389Z"
+    },
+    {
+      "id": "a1fa23d1-79b8-46ff-a7d0-0679f7f88762",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:31:58.180Z"
+    },
+    {
+      "id": "0074173c-c6c4-4755-ac7a-f7297ae049ab",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:32:00.979Z"
+    },
+    {
+      "id": "a1ea5eab-0206-4888-ae59-63b0ff8ca356",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:32:06.232Z"
+    },
+    {
+      "id": "5241c941-4772-4c90-a2c9-99fa39a770a3",
+      "admin_user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "target_mobile_number": "9850336418",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:39:01.412Z"
+    },
+    {
+      "id": "d5d427fc-fb7f-4214-aece-a93615edd532",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:39:15.055Z"
+    },
+    {
+      "id": "5a2bef95-1277-402f-b4c2-c17a2fb7f7ec",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:41:39.261Z"
+    },
+    {
+      "id": "a437ea06-826c-4df5-b1c2-d838d7dc2fbb",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:42:35.789Z"
+    },
+    {
+      "id": "2b2cb298-8465-43ee-bd01-e848720e1b28",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:44:26.073Z"
+    },
+    {
+      "id": "c36bdc62-83af-4ea9-9d20-9495e2734ec0",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:46:23.917Z"
+    },
+    {
+      "id": "73c68164-ea0b-49e4-968b-0cab47b4fc8a",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:49:51.039Z"
+    },
+    {
+      "id": "aefed728-19c5-45c2-af0c-5ed34f657481",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:54:03.915Z"
+    },
+    {
+      "id": "9699a921-1007-4d2c-9ce5-eb4c633d216d",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T18:54:23.790Z"
+    },
+    {
+      "id": "6f88cb73-7016-47d0-9691-aa802d63c442",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:03:09.542Z"
+    },
+    {
+      "id": "a2ae2cb8-0fcf-4541-bd9d-0b586ed11f25",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_LOCKED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:03:28.426Z"
+    },
+    {
+      "id": "b4457b4e-83d8-4ea2-be60-36b0ecd7f7c4",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PIN_RESET_LOCAL",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"method\":\"local_cli_script\",\"pinLength\":6,\"sessionsRevoked\":2}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:12:26.660Z"
+    },
+    {
+      "id": "5cae61db-fca7-4cd5-a7dc-389ed52317ad",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:12:39.579Z"
+    },
+    {
+      "id": "f7d65fdb-b55b-4772-b35e-eb2df2d526f5",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:12:41.683Z"
+    },
+    {
+      "id": "d7a2baf5-8166-4537-9137-54a1cc4e5513",
+      "admin_user_id": "1cbaed55-141f-419d-8294-d52180ce726a",
+      "action": "UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT",
+      "target_account_id": "1cbaed55-141f-419d-8294-d52180ce726a",
+      "target_mobile_number": "9876543210",
+      "details": "{\"userRole\":\"user\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:13:07.176Z"
+    },
+    {
+      "id": "b73520b5-73a1-4206-b0b7-1e9ca6cf7238",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:16:07.571Z"
+    },
+    {
+      "id": "f244c5eb-d7ab-449f-8499-0d28b79eb04d",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:16:10.479Z"
+    },
+    {
+      "id": "1aac7a06-6f3f-46d9-907e-4cadcfd661d7",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:16:33.701Z"
+    },
+    {
+      "id": "eed21057-7c71-4630-af6a-5ce1eab99866",
+      "admin_user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "action": "RECOVERY_REQUEST_SUBMITTED",
+      "target_account_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "target_mobile_number": "9850336418",
+      "details": "{\"requestId\":\"ef915be4-4a22-4c98-a66b-13b48baf4eda\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:17:29.254Z"
+    },
+    {
+      "id": "a7587c4b-0957-4e42-84b6-6d4be6158813",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "RECOVERY_REQUEST_APPROVED",
+      "target_account_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "target_mobile_number": "9850336418",
+      "details": "{\"requestId\":\"ef915be4-4a22-4c98-a66b-13b48baf4eda\",\"verificationMethod\":\"SECURE_CHANNEL\",\"expiresAt\":\"2026-10-17T19:48:10.086Z\",\"ttlMinutes\":30}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-17T19:18:10.087Z"
+    },
+    {
+      "id": "5135a128-7041-4bf4-b38a-e85a700762ae",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:42:57.570Z"
+    },
+    {
+      "id": "f84967ba-5b34-4fce-8302-1259df9f3372",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PROFILE_UPDATED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"updatedFields\":[\"full_name\",\"preferred_language\"]}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:42:57.591Z"
+    },
+    {
+      "id": "e22e48dd-cc64-4071-8267-6a3362059428",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PIN_CHANGE_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:42:57.638Z"
+    },
+    {
+      "id": "e7455df5-733c-4b3b-bcf1-0177900ebaac",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PIN_CHANGED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"method\":\"admin_erp_portal\",\"pinLength\":6}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:42:57.726Z"
+    },
+    {
+      "id": "17bfd61b-e139-42fd-9785-7ef1c26360b2",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:42:57.770Z"
+    },
+    {
+      "id": "b3ab25fa-0bf3-4f4a-8ece-bda605107453",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:42:57.811Z"
+    },
+    {
+      "id": "bede2cfe-2045-4c55-93b2-d1297c8ee044",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PIN_CHANGED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"method\":\"admin_erp_portal\",\"pinLength\":6}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:42:57.891Z"
+    },
+    {
+      "id": "65646478-555a-48aa-aacb-3625dfd9664a",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:43:11.822Z"
+    },
+    {
+      "id": "4b8a64e6-2e44-4a7c-929e-27a790f4dc05",
+      "admin_user_id": "7ba016b9-876f-4b13-8122-902fa4833614",
+      "action": "RECOVERY_REQUEST_SUBMITTED",
+      "target_account_id": "7ba016b9-876f-4b13-8122-902fa4833614",
+      "target_mobile_number": "9800011122",
+      "details": "{\"requestId\":\"dc62c0a6-5b82-4bb9-b23d-35e75ef687c6\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:43:11.912Z"
+    },
+    {
+      "id": "8923fa52-4e55-425f-a8ac-5d099f43ce7e",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "RECOVERY_REQUEST_APPROVED",
+      "target_account_id": "7ba016b9-876f-4b13-8122-902fa4833614",
+      "target_mobile_number": "9800011122",
+      "details": "{\"requestId\":\"dc62c0a6-5b82-4bb9-b23d-35e75ef687c6\",\"verificationMethod\":\"PHONE_CALL\",\"expiresAt\":\"2026-10-18T06:13:11.970Z\",\"ttlMinutes\":30}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:43:11.971Z"
+    },
+    {
+      "id": "ba2ac73b-3350-4900-b955-932bcb08b32e",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:43:25.082Z"
+    },
+    {
+      "id": "2672fa24-78dd-4d7d-81f0-09a294683c41",
+      "admin_user_id": "877777ed-47a8-467b-9cbf-dfc74caa7e6b",
+      "action": "RECOVERY_REQUEST_SUBMITTED",
+      "target_account_id": "877777ed-47a8-467b-9cbf-dfc74caa7e6b",
+      "target_mobile_number": "9800011123",
+      "details": "{\"requestId\":\"3266d34d-61f9-4436-8087-96c3217fdbea\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:43:25.181Z"
+    },
+    {
+      "id": "760a8985-f950-47dd-9c22-2f9317672363",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "RECOVERY_REQUEST_APPROVED",
+      "target_account_id": "877777ed-47a8-467b-9cbf-dfc74caa7e6b",
+      "target_mobile_number": "9800011123",
+      "details": "{\"requestId\":\"3266d34d-61f9-4436-8087-96c3217fdbea\",\"verificationMethod\":\"PHONE_CALL\",\"expiresAt\":\"2026-10-18T06:13:25.247Z\",\"ttlMinutes\":30}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:43:25.247Z"
+    },
+    {
+      "id": "877c2f9f-4925-4c8b-9ab8-6d03e5d32eee",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ACCOUNT_DELETED",
+      "target_account_id": "877777ed-47a8-467b-9cbf-dfc74caa7e6b",
+      "target_mobile_number": "9800011123",
+      "details": "{\"deletedAt\":\"2026-10-18T05:43:25.285Z\",\"sqliteDeleted\":true,\"firestoreDeleted\":false,\"firestoreMessage\":\"Firestore service account not configured; cloud sync skipped\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:43:25.286Z"
+    },
+    {
+      "id": "bdcab0e9-cef3-4288-ae62-49c33aade6ac",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:47:19.135Z"
+    },
+    {
+      "id": "503d6053-4f68-486f-8174-0dc841be2582",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PIN_CHANGED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"method\":\"admin_erp_portal\",\"pinLength\":6}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:47:50.772Z"
+    },
+    {
+      "id": "ef44c8a5-af88-4a5a-b064-7093525389c4",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PROFILE_UPDATED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"updatedFields\":[\"full_name\",\"preferred_language\"]}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:47:59.621Z"
+    },
+    {
+      "id": "f8ecdcaa-2e7e-4f99-8a84-f30387279a0a",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:54:45.995Z"
+    },
+    {
+      "id": "51518e91-6d11-4493-81f2-928e268ca30d",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PIN_RESET_LOCAL",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"method\":\"local_cli_script\",\"pinLength\":6,\"sessionsRevoked\":1}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:55:33.486Z"
+    },
+    {
+      "id": "20b4ef9a-c5c4-43c2-a684-cfce9602f98c",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:58:23.066Z"
+    },
+    {
+      "id": "d9becc83-08d9-43ca-a71f-c77c11f2fd07",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ACCOUNT_DELETED",
+      "target_account_id": "72feb41f-b98e-40fb-868a-f62a9d99efc9",
+      "target_mobile_number": "9800099999",
+      "details": "{\"deletedAt\":\"2026-10-18T05:58:23.257Z\",\"sqliteDeleted\":true,\"firestoreDeleted\":false,\"firestoreMessage\":\"Firestore service account not configured; cloud sync skipped\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-10-18T05:58:23.258Z"
+    },
+    {
+      "id": "451c0d88-e302-4e94-ae6c-f5a2923c6cd5",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T15:00:43.953Z"
+    },
+    {
+      "id": "3f8f878c-5f8e-47cb-ac9e-3671f4406114",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T15:00:49.976Z"
+    },
+    {
+      "id": "4f1ca7d5-ea73-49da-93bf-c454a56e2ff0",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T15:35:54.475Z"
+    },
+    {
+      "id": "a56e26a4-d337-4a8d-8ae7-e0331a722e23",
+      "admin_user_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "action": "RECOVERY_REQUEST_SUBMITTED",
+      "target_account_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "target_mobile_number": "9850336418",
+      "details": "{\"requestId\":\"039da4d3-8260-4ab7-a4f5-ce34bfe2ce96\"}",
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T15:37:33.887Z"
+    },
+    {
+      "id": "ee01df07-0dbc-4227-96f9-94c79b2685f1",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "RECOVERY_REQUEST_APPROVED",
+      "target_account_id": "91987edf-c196-4d8f-9b6e-1eebb4e34779",
+      "target_mobile_number": "9850336418",
+      "details": "{\"requestId\":\"039da4d3-8260-4ab7-a4f5-ce34bfe2ce96\",\"verificationMethod\":\"SECURE_CHANNEL\",\"expiresAt\":\"2026-10-18T16:07:46.864Z\",\"ttlMinutes\":30}",
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T15:37:46.864Z"
+    },
+    {
+      "id": "a0bff045-a376-4b61-8bd5-d127f10438f1",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ACCOUNT_DELETED",
+      "target_account_id": "1cbaed55-141f-419d-8294-d52180ce726a",
+      "target_mobile_number": "9876543210",
+      "details": "{\"deletedAt\":\"2026-10-18T15:43:12.708Z\",\"sqliteDeleted\":true,\"firestoreDeleted\":false,\"firestoreMessage\":\"Firestore service account not configured; cloud sync skipped\"}",
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T15:43:12.711Z"
+    },
+    {
+      "id": "a7cd81ce-318d-406a-b934-b69bc68b032e",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:27:14.042Z"
+    },
+    {
+      "id": "932318af-0a64-46b7-8176-a425726a69b8",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:27:23.867Z"
+    },
+    {
+      "id": "36d5d220-64b4-4575-a710-e3afe3b0f922",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_FAILED_WRONG_PIN",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:27:23.911Z"
+    },
+    {
+      "id": "8231e605-5188-4a2e-a5db-ed0649f38217",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_PIN_CHANGED",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": "{\"method\":\"admin_erp_portal\",\"pinLength\":6}",
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:36:40.495Z"
+    },
+    {
+      "id": "b1e13f60-a87a-404a-873b-7fb04a43816f",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGOUT",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:36:43.187Z"
+    },
+    {
+      "id": "280fd2e1-d97c-4593-8a62-b97bb1c666c3",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:36:44.477Z"
+    },
+    {
+      "id": "3b684d7a-74de-43d0-8fd8-be9c36d2c2c4",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGOUT",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:36:47.492Z"
+    },
+    {
+      "id": "c88abc68-ccb8-421f-acaa-5a96606d814a",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:36:48.493Z"
+    },
+    {
+      "id": "e5b13bbb-eef9-4045-aea8-8f5af45d6253",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGOUT",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:36:51.332Z"
+    },
+    {
+      "id": "c546e4af-511a-4bcc-90f7-20bf7c87b1e0",
+      "admin_user_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "action": "ADMIN_LOGIN_SUCCESS",
+      "target_account_id": "24c7311d-9cb0-41c0-a0ed-cfee2ed69552",
+      "target_mobile_number": "9356755100",
+      "details": null,
+      "ip_address": "::ffff:127.0.0.1",
+      "created_at": "2026-10-18T16:36:52.155Z"
+    }
+  ]
+}

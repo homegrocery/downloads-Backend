@@ -1,18 +1,26 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
 import { getDatabase } from './db/database.js';
+import { initPostgresSync, closePostgresSync } from './db/postgresSync.js';
 
 const app = createApp();
 
 // Initialize database
-getDatabase();
+const db = getDatabase();
+
+// If DATABASE_URL is provided, initialize Neon PostgreSQL synchronization & write-mirroring
+if (config.databaseUrl) {
+  initPostgresSync(db, config.databaseUrl).catch(err => {
+    console.error('[FATAL] Failed to initialize Neon PostgreSQL synchronization:', err);
+  });
+}
 
 const server = app.listen(config.port, config.host, () => {
   console.log(`====================================================`);
   console.log(` Home Grocery Backend Server (घरगुती किराणा यादी)`);
   console.log(` Version: ${config.appVersion} (Build ${config.buildNumber})`);
   console.log(` Listening on: http://${config.host}:${config.port}`);
-  console.log(` Database: ${config.dbPath}`);
+  console.log(` Database: ${config.databaseUrl ? 'Neon PostgreSQL (with local engine)' : config.dbPath}`);
   console.log(` Environment: ${config.nodeEnv}`);
   console.log(` Attribution: ${config.attribution.en} / ${config.attribution.mr}`);
   console.log(`====================================================`);
@@ -21,6 +29,7 @@ const server = app.listen(config.port, config.host, () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received. Closing HTTP server.');
+  closePostgresSync();
   server.close(() => {
     console.log('HTTP server closed.');
     process.exit(0);
@@ -29,6 +38,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('SIGINT signal received. Closing HTTP server.');
+  closePostgresSync();
   server.close(() => {
     console.log('HTTP server closed.');
     process.exit(0);
