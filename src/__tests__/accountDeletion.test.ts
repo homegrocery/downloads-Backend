@@ -118,6 +118,10 @@ describe('Admin Permanent Account Deletion & Cascading Clean-up', () => {
     expect(deleteRes.status).toBe(200);
     expect(deleteRes.body.success).toBe(true);
     expect(deleteRes.body.data.deletedAccountId).toBe(userReg.user.id);
+    expect(deleteRes.body.data.confirmationId).toMatch(/^DEL-/);
+    expect(deleteRes.body.data.cascadedTables.shopping_items).toBe(1);
+    expect(deleteRes.body.data.cascadedTables.shopping_lists).toBe(1);
+    expect(deleteRes.body.data.cascadedTables.users).toBe(1);
 
     // 7. Verify cascade deletion across all tables
     const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(userReg.user.id);

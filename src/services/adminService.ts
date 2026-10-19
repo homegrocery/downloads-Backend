@@ -826,6 +826,8 @@ export class AdminService {
   }): Promise<{
     success: boolean;
     deletedAccountId: string;
+    confirmationId: string;
+    cascadedTables: Record<string, number>;
     deletedAt: string;
     sqliteDeleted: boolean;
     firestoreDeleted: boolean;
@@ -877,23 +879,50 @@ export class AdminService {
     }
 
     const nowIso = new Date().toISOString();
+    const confirmationId = `DEL-${Date.now().toString(36).toUpperCase()}-${user.id.substring(0, 8).toUpperCase()}`;
+
+    const cascadedTables: Record<string, number> = {
+      shopping_items: 0,
+      shopping_lists: 0,
+      sync_operations: 0,
+      authentication_sessions: 0,
+      recovery_authorizations: 0,
+      recovery_codes: 0,
+      recovery_requests: 0,
+      users: 0
+    };
 
     // 1. Cascade delete in SQLite under atomic transaction
     db.transaction(() => {
       // Items and lists
-      db.prepare('DELETE FROM shopping_items WHERE user_id = ?').run(user.id);
-      db.prepare('DELETE FROM shopping_lists WHERE user_id = ?').run(user.id);
+      const itemRes = db.prepare('DELETE FROM shopping_items WHERE user_id = ?').run(user.id);
+      cascadedTables.shopping_items = itemRes.changes;
+
+      const listRes = db.prepare('DELETE FROM shopping_lists WHERE user_id = ?').run(user.id);
+      cascadedTables.shopping_lists = listRes.changes;
+
       // Sync operations
-      db.prepare('DELETE FROM sync_operations WHERE user_id = ?').run(user.id);
+      const syncRes = db.prepare('DELETE FROM sync_operations WHERE user_id = ?').run(user.id);
+      cascadedTables.sync_operations = syncRes.changes;
+
       // Sessions
-      db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
+      const sessRes = db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
+      cascadedTables.authentication_sessions = sessRes.changes;
+
       // Recovery authorizations & codes
-      db.prepare('DELETE FROM recovery_authorizations WHERE user_id = ?').run(user.id);
-      db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').run(user.id);
+      const authRes = db.prepare('DELETE FROM recovery_authorizations WHERE user_id = ?').run(user.id);
+      cascadedTables.recovery_authorizations = authRes.changes;
+
+      const codeRes = db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').run(user.id);
+      cascadedTables.recovery_codes = codeRes.changes;
+
       // Recovery requests
-      db.prepare('DELETE FROM recovery_requests WHERE user_id = ? OR mobile_number = ?').run(user.id, user.mobile_number);
+      const reqRes = db.prepare('DELETE FROM recovery_requests WHERE user_id = ? OR mobile_number = ?').run(user.id, user.mobile_number);
+      cascadedTables.recovery_requests = reqRes.changes;
+
       // Users table
-      db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+      const userRes = db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+      cascadedTables.users = userRes.changes;
     })();
 
     // 2. Firestore Deletion attempt (if configured and credentials exist)
@@ -931,7 +960,9 @@ export class AdminService {
       targetAccountId: user.id,
       targetMobileNumber: user.mobile_number,
       details: {
+        confirmationId,
         deletedAt: nowIso,
+        cascadedTables,
         sqliteDeleted: true,
         firestoreDeleted,
         firestoreMessage
@@ -942,6 +973,8 @@ export class AdminService {
     return {
       success: true,
       deletedAccountId: user.id,
+      confirmationId,
+      cascadedTables,
       deletedAt: nowIso,
       sqliteDeleted: true,
       firestoreDeleted,
