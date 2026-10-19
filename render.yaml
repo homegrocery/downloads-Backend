@@ -2,8 +2,8 @@ services:
   - type: web
     name: home-grocery-api
     env: node
-    plan: starter
-    buildCommand: npm install && npm run build
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -12,17 +12,15 @@ services:
         value: 10000
       - key: HOST
         value: 0.0.0.0
-      - key: DB_PATH
-        value: /var/data/homegrocery.db
-      - key: BACKUP_DIR
-        value: /var/data/backups
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_MOBILE_NUMBER
+        value: "9356755100"
+      - key: RECOVERY_ENCRYPTION_KEY
+        generateValue: true
       - key: SESSION_TTL_HOURS
-        value: 720
+        value: "720"
       - key: MAX_FAILED_ATTEMPTS
-        value: 5
+        value: "5"
       - key: LOCKOUT_MINUTES
-        value: 15
-    disk:
-      name: homegrocery-data
-      mountPath: /var/data
-      sizeGB: 1
+        value: "15"
