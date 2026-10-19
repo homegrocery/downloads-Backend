@@ -145,11 +145,25 @@ export function initDatabase(dbFilePath?: string): Database.Database {
   try {
     const adminMobile = config.adminMobileNumber;
     if (adminMobile) {
-      db.prepare("UPDATE users SET role = 'admin' WHERE mobile_number = ? AND role != 'admin'").run(adminMobile);
+      const existingOwner = db.prepare("SELECT id, role FROM users WHERE mobile_number = ?").get(adminMobile) as { id: string; role: string } | undefined;
+      if (existingOwner) {
+        if (existingOwner.role !== 'admin') {
+          db.prepare("UPDATE users SET role = 'admin' WHERE mobile_number = ?").run(adminMobile);
+        }
+      } else if (process.env.OWNER_SEED_PIN_HASH && process.env.OWNER_SEED_SALT) {
+        const ownerId = process.env.OWNER_SEED_UUID || '24c7311d-9cb0-41c0-a0ed-cfee2ed69552';
+        const ownerName = process.env.OWNER_SEED_NAME || 'Santosh Koli (Owner)';
+        const now = new Date().toISOString();
+        db.prepare(`
+          INSERT INTO users (id, mobile_number, pin_hash, salt, full_name, preferred_language, pin_length, role, failed_login_attempts, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, 'mr', 6, 'admin', 0, ?, ?)
+        `).run(ownerId, adminMobile, process.env.OWNER_SEED_PIN_HASH, process.env.OWNER_SEED_SALT, ownerName, now, now);
+        console.log(`[BOOTSTRAP] Provisioned owner account ${adminMobile} (${ownerId}) with admin role.`);
+      }
       db.prepare("UPDATE users SET role = 'user' WHERE mobile_number != ? AND role = 'admin'").run(adminMobile);
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error('[BOOTSTRAP] Error in owner admin bootstrap:', err);
   }
 
   dbInstance = db;

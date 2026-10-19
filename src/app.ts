@@ -16,7 +16,6 @@ export function createApp() {
 
   // Explicit Allowed CORS Origins (Non-wildcard, secure enforcement)
   const allowedOrigins = [
-    'https://admin-erp-7ze5.onrender.com',
     'https://homegrocery.github.io',
     'http://localhost:3000',
     'http://localhost:3002',
@@ -32,7 +31,7 @@ export function createApp() {
   }
 
   // CORS configuration
-  app.use(cors({
+  const corsOptions: cors.CorsOptions = {
     origin: (origin, callback) => {
       // Allow requests with no origin (like native mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
@@ -43,8 +42,12 @@ export function createApp() {
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Version', 'X-Recovery-Request-Id', 'X-Recovery-Token'],
-    credentials: true
-  }));
+    credentials: true,
+    optionsSuccessStatus: 204
+  };
+
+  app.use(cors(corsOptions));
+  app.options('*', cors(corsOptions));
 
   // Body parser
   app.use(express.json({ limit: '5mb' }));

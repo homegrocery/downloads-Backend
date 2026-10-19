@@ -22,7 +22,7 @@ export const config = {
   appName: 'Home Grocery',
   appNameMr: 'घरगुती किराणा यादी',
   appVersion: '1.0.0',
-  buildNumber: 5,
+  buildNumber: 7,
   attribution: {
     en: 'App developed by Santosh Koli',
     mr: 'संतोष कोळी यांनी विकसित केलेले ॲप'
