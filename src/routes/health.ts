@@ -25,9 +25,11 @@ healthRouter.get('/health', async (req, res) => {
       });
       const client = await pool.connect();
       const result = await client.query('SELECT 1 as alive');
+      const tablesRes = await client.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;");
       client.release();
       await pool.end();
       dbStatus.connected = result.rows.length > 0;
+      (dbStatus as any).tables = tablesRes.rows.map(r => r.table_name);
     } catch (err: any) {
       dbStatus.connected = false;
       dbStatus.error = err.message;
