@@ -8,6 +8,7 @@ export const config = {
   host: process.env.HOST || '0.0.0.0',
   nodeEnv: process.env.NODE_ENV || 'development',
   dbPath: process.env.DB_PATH || path.resolve(process.cwd(), 'data', 'homegrocery.db'),
+  databaseUrl: process.env.DATABASE_URL || '',
   backupDir: process.env.BACKUP_DIR || path.resolve(process.cwd(), 'backups'),
   sessionTtlHours: parseInt(process.env.SESSION_TTL_HOURS || '720', 10), // 30 days
   maxFailedAttempts: parseInt(process.env.MAX_FAILED_ATTEMPTS || '5', 10),
