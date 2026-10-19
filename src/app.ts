@@ -55,6 +55,21 @@ export function createApp() {
     next();
   });
 
+  // Root status and health redirect
+  app.get('/', (req, res) => {
+    res.json({
+      service: 'Home Grocery API',
+      serviceMr: 'घरगुती किराणा यादी API',
+      status: 'ok',
+      health: '/api/health',
+      version: '1.0.0'
+    });
+  });
+
+  app.get('/health', (req, res) => {
+    res.redirect(301, '/api/health');
+  });
+
   // Routes
   app.use('/api', healthRouter);
   app.use('/api/auth', authRouter);

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: home-grocery-backend
+    name: home-grocery-api
     env: node
     plan: starter
     buildCommand: npm install && npm run build
@@ -9,7 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3001
+        value: 10000
       - key: HOST
         value: 0.0.0.0
       - key: DB_PATH
