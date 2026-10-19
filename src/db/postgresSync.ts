@@ -81,6 +81,15 @@ export async function initPostgresSync(db: Database.Database, databaseUrl: strin
       }
     }
 
+    // Ensure is_archived and archived_at columns exist in Neon PostgreSQL
+    try {
+      await client.query('ALTER TABLE admin_audit_logs ADD COLUMN IF NOT EXISTS is_archived INTEGER NOT NULL DEFAULT 0');
+      await client.query('ALTER TABLE admin_audit_logs ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ');
+      await client.query('CREATE INDEX IF NOT EXISTS idx_admin_audit_archived ON admin_audit_logs(is_archived)');
+    } catch (e: any) {
+      console.warn('[NEON SYNC] Warning while checking audit log schema columns:', e.message);
+    }
+
     // 3. Check if Neon has data in users
     const userCountRes = await client.query('SELECT COUNT(*) as count FROM users');
     const userCount = parseInt(userCountRes.rows[0].count, 10);

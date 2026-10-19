@@ -38,8 +38,8 @@ export class AdminService {
 
       db.prepare(`
         INSERT INTO admin_audit_logs (
-          id, admin_user_id, action, target_account_id, target_mobile_number, details, ip_address, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          id, admin_user_id, action, target_account_id, target_mobile_number, details, ip_address, is_archived, archived_at, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?)
       `).run(
         id,
         params.adminUserId,
@@ -850,12 +850,20 @@ export class AdminService {
       throw err;
     }
 
-    // Safety: Cannot delete oneself as admin
+    // Safety: Cannot delete oneself or any administrator or designated owner
     if (user.id === params.adminUserId) {
       const err: any = new Error('CANNOT_DELETE_SELF: Administrators cannot delete their own active account');
       err.status = 400;
       err.code = 'CANNOT_DELETE_SELF';
       err.errorMr = 'प्रशासक स्वतःचे खाते हटवू शकत नाहीत';
+      throw err;
+    }
+
+    if (user.role === 'admin' || user.mobile_number === '9356755100' || user.mobile_number === config.adminMobileNumber) {
+      const err: any = new Error('CANNOT_DELETE_ADMIN: Administrator and owner accounts are strictly protected from deletion');
+      err.status = 400;
+      err.code = 'CANNOT_DELETE_ADMIN';
+      err.errorMr = 'प्रशासक आणि मालक खाती सुरक्षित आहेत आणि हटवता येत नाहीत';
       throw err;
     }
 
@@ -942,15 +950,214 @@ export class AdminService {
   }
 
   /**
-   * Get Audit Logs.
+   * Delete all eligible ordinary user accounts in one confirmed operation.
+   * Requires exact confirmation phrase: "DELETE ALL ORDINARY USERS".
+   * Strict protection: Owner account (9356755100) and any admin role accounts are NEVER deleted.
+   * Cascades lists, items, sessions, recovery codes, recovery requests.
+   */
+  static async bulkDeleteAccounts(params: {
+    adminUserId: string;
+    confirmationPhrase: string;
+    expectedCount?: number;
+    ipAddress?: string;
+  }): Promise<{
+    success: boolean;
+    deletedCount: number;
+    deletedAccountIds: string[];
+    deletedAt: string;
+    cascadedTotals: Record<string, number>;
+  }> {
+    if (!params.confirmationPhrase || params.confirmationPhrase.trim() !== 'DELETE ALL ORDINARY USERS') {
+      const err: any = new Error('CONFIRMATION_MISMATCH: Confirmation phrase must be DELETE ALL ORDINARY USERS');
+      err.status = 400;
+      err.code = 'CONFIRMATION_MISMATCH';
+      err.errorMr = 'खात्री शब्द DELETE ALL ORDINARY USERS असणे आवश्यक आहे';
+      throw err;
+    }
+
+    const db = getDatabase();
+    const ownerMobile = config.adminMobileNumber || '9356755100';
+    const ownerId = '24c7311d-9cb0-41c0-a0ed-cfee2ed69552';
+
+    // Find all ordinary, non-admin user accounts, strictly excluding owner and calling admin
+    const ordinaryUsers = db.prepare(`
+      SELECT id, mobile_number, full_name
+      FROM users
+      WHERE role != 'admin'
+        AND id != ?
+        AND id != ?
+        AND mobile_number != ?
+        AND mobile_number != '9356755100'
+    `).all(params.adminUserId, ownerId, ownerMobile) as Array<{ id: string; mobile_number: string; full_name: string }>;
+
+    const deletedAccountIds = ordinaryUsers.map(u => u.id);
+    const deletedCount = ordinaryUsers.length;
+    const nowIso = new Date().toISOString();
+
+    const cascadedTotals: Record<string, number> = {
+      users: deletedCount,
+      shopping_lists: 0,
+      shopping_items: 0,
+      authentication_sessions: 0,
+      recovery_codes: 0,
+      recovery_authorizations: 0,
+      recovery_requests: 0,
+      sync_operations: 0
+    };
+
+    if (deletedCount > 0) {
+      db.transaction(() => {
+        for (const user of ordinaryUsers) {
+          const itemRes = db.prepare('DELETE FROM shopping_items WHERE user_id = ?').run(user.id);
+          cascadedTotals.shopping_items += itemRes.changes;
+
+          const listRes = db.prepare('DELETE FROM shopping_lists WHERE user_id = ?').run(user.id);
+          cascadedTotals.shopping_lists += listRes.changes;
+
+          const syncRes = db.prepare('DELETE FROM sync_operations WHERE user_id = ?').run(user.id);
+          cascadedTotals.sync_operations += syncRes.changes;
+
+          const sessRes = db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
+          cascadedTotals.authentication_sessions += sessRes.changes;
+
+          const authRes = db.prepare('DELETE FROM recovery_authorizations WHERE user_id = ?').run(user.id);
+          cascadedTotals.recovery_authorizations += authRes.changes;
+
+          const codeRes = db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').run(user.id);
+          cascadedTotals.recovery_codes += codeRes.changes;
+
+          const reqRes = db.prepare('DELETE FROM recovery_requests WHERE user_id = ? OR mobile_number = ?').run(user.id, user.mobile_number);
+          cascadedTotals.recovery_requests += reqRes.changes;
+
+          db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+        }
+      })();
+    }
+
+    // Record audit event
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'ACCOUNTS_BULK_DELETED',
+      details: {
+        deletedCount,
+        deletedAccountIds,
+        cascadedTotals,
+        confirmationPhrase: params.confirmationPhrase.trim()
+      },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      deletedCount,
+      deletedAccountIds,
+      deletedAt: nowIso,
+      cascadedTotals
+    };
+  }
+
+  /**
+   * Archive one audit log entry from the active audit view.
+   * Preserves entry in immutable storage while hiding from default view.
+   */
+  static archiveAuditLog(params: {
+    id: string;
+    adminUserId: string;
+    ipAddress?: string;
+  }): { success: boolean; id: string; archived_at: string } {
+    const db = getDatabase();
+    const entry = db.prepare('SELECT * FROM admin_audit_logs WHERE id = ?').get(params.id) as AdminAuditLogRecord | undefined;
+
+    if (!entry) {
+      const err: any = new Error('NOT_FOUND: Audit log entry does not exist');
+      err.status = 404;
+      err.code = 'NOT_FOUND';
+      err.errorMr = 'ऑडिट लॉग नोंद आढळली नाही';
+      throw err;
+    }
+
+    if (entry.is_archived) {
+      const err: any = new Error('ALREADY_ARCHIVED: Audit log entry is already archived');
+      err.status = 400;
+      err.code = 'ALREADY_ARCHIVED';
+      err.errorMr = 'ऑडिट लॉग नोंद आधीच संग्रहित केली आहे';
+      throw err;
+    }
+
+    const nowIso = new Date().toISOString();
+    db.prepare('UPDATE admin_audit_logs SET is_archived = 1, archived_at = ? WHERE id = ?').run(nowIso, entry.id);
+
+    // Record audit event for this archival
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'AUDIT_LOG_ARCHIVED',
+      targetAccountId: entry.target_account_id,
+      targetMobileNumber: entry.target_mobile_number,
+      details: { archivedLogId: entry.id, previousAction: entry.action },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      id: entry.id,
+      archived_at: nowIso
+    };
+  }
+
+  /**
+   * Remove/archive all active audit logs from the active view in one confirmed operation.
+   * Requires exact confirmation phrase: "DELETE ALL AUDIT LOGS".
+   * Preserves historical logs with is_archived = 1, and inserts an active AUDIT_LOGS_BULK_ARCHIVED event.
+   */
+  static bulkArchiveAuditLogs(params: {
+    adminUserId: string;
+    confirmationPhrase: string;
+    ipAddress?: string;
+  }): { success: boolean; count: number; archived_at: string } {
+    if (!params.confirmationPhrase || params.confirmationPhrase.trim() !== 'DELETE ALL AUDIT LOGS') {
+      const err: any = new Error('CONFIRMATION_MISMATCH: Confirmation phrase must be DELETE ALL AUDIT LOGS');
+      err.status = 400;
+      err.code = 'CONFIRMATION_MISMATCH';
+      err.errorMr = 'खात्री शब्द DELETE ALL AUDIT LOGS असणे आवश्यक आहे';
+      throw err;
+    }
+
+    const db = getDatabase();
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM admin_audit_logs WHERE COALESCE(is_archived, 0) = 0').get() as { count: number };
+    const count = countRow ? countRow.count : 0;
+
+    const nowIso = new Date().toISOString();
+    if (count > 0) {
+      db.prepare('UPDATE admin_audit_logs SET is_archived = 1, archived_at = ? WHERE COALESCE(is_archived, 0) = 0').run(nowIso);
+    }
+
+    // Insert active bulk archive event (is_archived = 0 so it stays visible in active logs)
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'AUDIT_LOGS_BULK_ARCHIVED',
+      details: { archivedCount: count, confirmationPhrase: params.confirmationPhrase.trim() },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      count,
+      archived_at: nowIso
+    };
+  }
+
+  /**
+   * Get Audit Logs. Defaults to active (unarchived) logs.
+   * Sets timestamp: l.created_at as well as created_at for frontend compatibility.
    */
   static getAuditLogs(params: {
     page?: number;
     limit?: number;
     action?: string;
     search?: string;
+    showArchived?: boolean;
   }): {
-    logs: Array<AdminAuditLogRecord & { admin_name?: string }>;
+    logs: Array<AdminAuditLogRecord & { admin_name?: string; timestamp: string }>;
     total: number;
     page: number;
     limit: number;
@@ -961,7 +1168,9 @@ export class AdminService {
     const limit = Math.min(100, Math.max(1, Number(params.limit) || 50));
     const offset = (page - 1) * limit;
 
-    let whereClause = '1=1';
+    let whereClause = params.showArchived
+      ? 'COALESCE(l.is_archived, 0) = 1'
+      : 'COALESCE(l.is_archived, 0) = 0';
     const whereArgs: any[] = [];
 
     if (params.action && params.action.trim() && params.action !== 'ALL') {
@@ -993,8 +1202,13 @@ export class AdminService {
       LIMIT ? OFFSET ?
     `).all(...whereArgs, limit, offset) as any[];
 
+    const logs = rows.map(r => ({
+      ...r,
+      timestamp: r.created_at
+    }));
+
     return {
-      logs: rows,
+      logs,
       total,
       page,
       limit,
@@ -1002,3 +1216,4 @@ export class AdminService {
     };
   }
 }
+

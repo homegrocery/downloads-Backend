@@ -149,4 +149,162 @@ describe('Admin Permanent Account Deletion & Cascading Clean-up', () => {
 
     expect(loginRes.status).toBe(400);
   });
+
+  it('bulk deletes ordinary accounts with DELETE ALL ORDINARY USERS while strictly preserving owner 9356755100', async () => {
+    const db = getDatabase();
+
+    // Register owner admin
+    const ownerReg = AuthService.register({
+      mobileNumber: '9356755100',
+      pin: '654321',
+      fullName: 'Santosh Koli Owner',
+      preferredLanguage: 'mr',
+      pinLength: 6
+    });
+    db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(ownerReg.user.id);
+
+    // Register 2 ordinary users
+    const u1 = AuthService.register({
+      mobileNumber: '9800000001',
+      pin: '111111',
+      fullName: 'Ordinary User 1',
+      preferredLanguage: 'en',
+      pinLength: 6
+    });
+    const u2 = AuthService.register({
+      mobileNumber: '9800000002',
+      pin: '222222',
+      fullName: 'Ordinary User 2',
+      preferredLanguage: 'mr',
+      pinLength: 6
+    });
+
+    // Create lists and items for ordinary users
+    const list1 = ListService.createList(u1.user.id, { title: 'U1 List', monthYear: '2026-10' });
+    ListService.addItem(u1.user.id, list1.id, { name: 'Rice', quantity: 5, unit: 'kg' });
+    const list2 = ListService.createList(u2.user.id, { title: 'U2 List', monthYear: '2026-10' });
+    ListService.addItem(u2.user.id, list2.id, { name: 'Wheat', quantity: 10, unit: 'kg' });
+
+    // Admin login
+    const adminLoginRes = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ mobileNumber: '9356755100', pin: '654321' });
+    const adminToken = adminLoginRes.body.data.token;
+
+    // Bad confirmation phrase -> fails
+    const badPhrase = await request(app)
+      .post('/api/admin/accounts/bulk-delete')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ confirmationPhrase: 'DELETE ALL' });
+    expect(badPhrase.status).toBe(400);
+    expect(badPhrase.body.error).toContain('CONFIRMATION_MISMATCH');
+
+    // Valid bulk delete
+    const bulkRes = await request(app)
+      .post('/api/admin/accounts/bulk-delete')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ confirmationPhrase: 'DELETE ALL ORDINARY USERS' });
+
+    expect(bulkRes.status).toBe(200);
+    expect(bulkRes.body.success).toBe(true);
+    expect(bulkRes.body.data.deletedCount).toBe(2);
+    expect(bulkRes.body.data.deletedAccountIds).toContain(u1.user.id);
+    expect(bulkRes.body.data.deletedAccountIds).toContain(u2.user.id);
+
+    // Verify owner account is NOT deleted and still admin
+    const ownerRow = db.prepare('SELECT * FROM users WHERE mobile_number = ?').get('9356755100') as any;
+    expect(ownerRow).toBeDefined();
+    expect(ownerRow.role).toBe('admin');
+
+    // Verify ordinary users deleted along with lists and items
+    const checkU1 = db.prepare('SELECT * FROM users WHERE id = ?').get(u1.user.id);
+    const checkU2 = db.prepare('SELECT * FROM users WHERE id = ?').get(u2.user.id);
+    expect(checkU1).toBeUndefined();
+    expect(checkU2).toBeUndefined();
+
+    const lists = db.prepare('SELECT * FROM shopping_lists').all();
+    expect(lists.length).toBe(0);
+
+    // Verify audit log has ACCOUNTS_BULK_DELETED
+    const auditRes = await request(app)
+      .get('/api/admin/audit-logs')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(auditRes.body.data.logs.some((l: any) => l.action === 'ACCOUNTS_BULK_DELETED')).toBe(true);
+  });
+
+  it('archives single audit entry and bulk archives all audit logs with DELETE ALL AUDIT LOGS', async () => {
+    const db = getDatabase();
+
+    // Register owner admin
+    const ownerReg = AuthService.register({
+      mobileNumber: '9356755100',
+      pin: '654321',
+      fullName: 'Santosh Koli Owner',
+      preferredLanguage: 'mr',
+      pinLength: 6
+    });
+    db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(ownerReg.user.id);
+
+    // Admin login to create audit entries
+    const adminLoginRes = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ mobileNumber: '9356755100', pin: '654321' });
+    const adminToken = adminLoginRes.body.data.token;
+
+    // Fetch active logs
+    const initialLogsRes = await request(app)
+      .get('/api/admin/audit-logs')
+      .set('Authorization', `Bearer ${adminToken}`);
+    const activeLogs = initialLogsRes.body.data.logs;
+    expect(activeLogs.length).toBeGreaterThan(0);
+
+    // Archive first log
+    const targetLogId = activeLogs[0].id;
+    const archiveOneRes = await request(app)
+      .post(`/api/admin/audit-logs/${targetLogId}/archive`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(archiveOneRes.status).toBe(200);
+    expect(archiveOneRes.body.success).toBe(true);
+
+    // Verify targetLogId is no longer in active logs
+    const afterOneRes = await request(app)
+      .get('/api/admin/audit-logs')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(afterOneRes.body.data.logs.some((l: any) => l.id === targetLogId)).toBe(false);
+
+    // Verify targetLogId is in archived logs
+    const archivedRes = await request(app)
+      .get('/api/admin/audit-logs?showArchived=true')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(archivedRes.body.data.logs.some((l: any) => l.id === targetLogId)).toBe(true);
+
+    // Bulk archive without exact phrase fails
+    const badBulk = await request(app)
+      .post('/api/admin/audit-logs/archive-all')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ confirmationPhrase: 'DELETE LOGS' });
+    expect(badBulk.status).toBe(400);
+    expect(badBulk.body.error).toContain('CONFIRMATION_MISMATCH');
+
+    // Bulk archive with exact phrase
+    const bulkArchiveRes = await request(app)
+      .post('/api/admin/audit-logs/archive-all')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ confirmationPhrase: 'DELETE ALL AUDIT LOGS' });
+    expect(bulkArchiveRes.status).toBe(200);
+    expect(bulkArchiveRes.body.success).toBe(true);
+
+    // Verify only the AUDIT_LOGS_BULK_ARCHIVED entry is present in active logs
+    const activeAfterBulk = await request(app)
+      .get('/api/admin/audit-logs')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(activeAfterBulk.body.data.logs.length).toBe(1);
+    expect(activeAfterBulk.body.data.logs[0].action).toBe('AUDIT_LOGS_BULK_ARCHIVED');
+
+    // All previous logs still exist in database with is_archived = 1
+    const allDbLogs = db.prepare('SELECT * FROM admin_audit_logs').all() as any[];
+    expect(allDbLogs.length).toBeGreaterThan(1);
+  });
 });
+

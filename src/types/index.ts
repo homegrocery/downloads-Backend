@@ -129,5 +129,8 @@ export interface AdminAuditLogRecord {
   target_mobile_number: string | null;
   details: string | null;
   ip_address: string | null;
+  is_archived?: number;
+  archived_at?: string | null;
   created_at: string;
 }
+

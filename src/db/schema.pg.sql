@@ -151,8 +151,12 @@ CREATE TABLE IF NOT EXISTS admin_audit_logs (
     target_mobile_number VARCHAR(15),
     details TEXT,
     ip_address VARCHAR(64),
+    is_archived INTEGER NOT NULL DEFAULT 0,
+    archived_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON admin_audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_archived ON admin_audit_logs(is_archived);
+

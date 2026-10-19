@@ -209,7 +209,7 @@ adminRouter.post('/recovery-requests/:id/reject', requireAdmin, (req: Authentica
   }
 });
 
-// Permanent Account Deletion
+// Permanent Single Account Deletion
 adminRouter.post('/accounts/:id/delete', requireAdmin, async (req: AuthenticatedRequest, res, next) => {
   try {
     const targetAccountId = req.params.id;
@@ -235,15 +235,40 @@ adminRouter.post('/accounts/:id/delete', requireAdmin, async (req: Authenticated
   }
 });
 
-// Security & Audit Logs
+// Bulk Account Deletion (All Ordinary Non-Admin Users)
+adminRouter.post('/accounts/bulk-delete', requireAdmin, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { confirmationPhrase, expectedCount } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = await AdminService.bulkDeleteAccounts({
+      adminUserId: req.user!.id,
+      confirmationPhrase,
+      expectedCount,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully purged ${result.deletedCount} ordinary user account(s)`,
+      messageMr: `${result.deletedCount} सामान्य वापरकर्ता खाती यशस्वीरित्या हटवली`,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Security & Audit Logs (Active view by default, archived optionally)
 adminRouter.get('/audit-logs', requireAdmin, (req: AuthenticatedRequest, res, next) => {
   try {
     const page = req.query.page ? parseInt(String(req.query.page), 10) : 1;
     const limit = req.query.limit ? parseInt(String(req.query.limit), 10) : 50;
     const action = req.query.action ? String(req.query.action) : undefined;
     const search = req.query.search ? String(req.query.search) : undefined;
+    const showArchived = req.query.showArchived === 'true' || req.query.archived === 'true';
 
-    const result = AdminService.getAuditLogs({ page, limit, action, search });
+    const result = AdminService.getAuditLogs({ page, limit, action, search, showArchived });
     res.json({
       success: true,
       data: result
@@ -252,3 +277,50 @@ adminRouter.get('/audit-logs', requireAdmin, (req: AuthenticatedRequest, res, ne
     next(err);
   }
 });
+
+// Archive Single Audit Entry
+adminRouter.post('/audit-logs/:id/archive', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const logId = req.params.id;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.archiveAuditLog({
+      id: logId,
+      adminUserId: req.user!.id,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Audit log entry archived from active view',
+      messageMr: 'ऑडिट लॉग नोंद सक्रिय दृश्यातून संग्रहित केली',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Bulk Archive All Active Audit Entries
+adminRouter.post('/audit-logs/archive-all', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { confirmationPhrase } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.bulkArchiveAuditLogs({
+      adminUserId: req.user!.id,
+      confirmationPhrase,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: `Archived ${result.count} audit entry/entries from active view`,
+      messageMr: `${result.count} ऑडिट नोंदी सक्रिय दृश्यातून संग्रहित केल्या`,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
