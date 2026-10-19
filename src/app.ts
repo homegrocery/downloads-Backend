@@ -14,11 +14,36 @@ import { errorHandler } from './middleware/errorHandler.js';
 export function createApp() {
   const app = express();
 
+  // Explicit Allowed CORS Origins (Non-wildcard, secure enforcement)
+  const allowedOrigins = [
+    'https://admin-erp-7ze5.onrender.com',
+    'https://homegrocery.github.io',
+    'http://localhost:3000',
+    'http://localhost:3002',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3002',
+    'capacitor://localhost',
+    'http://localhost'
+  ];
+
+  if (process.env.CORS_ALLOWED_ORIGINS) {
+    const extra = process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean);
+    allowedOrigins.push(...extra);
+  }
+
   // CORS configuration
   app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Version', 'X-Recovery-Request-Id', 'X-Recovery-Token']
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like native mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Version', 'X-Recovery-Request-Id', 'X-Recovery-Token'],
+    credentials: true
   }));
 
   // Body parser
