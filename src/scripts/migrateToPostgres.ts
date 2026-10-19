@@ -1,8 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
 import Database from 'better-sqlite3';
 import pg from 'pg';
 import { convertQuestionMarksToDollarParams } from '../db/postgresAdapter.js';
+
+dotenv.config();
 
 const { Pool } = pg;
 
@@ -169,11 +173,13 @@ export async function runPostgresMigration(options: MigrationOptions = {}) {
 }
 
 // CLI execution wrapper
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+const currentFilePath = fileURLToPath(import.meta.url);
+const invokedFilePath = process.argv[1] ? path.resolve(process.argv[1]) : '';
+if (invokedFilePath === currentFilePath || invokedFilePath.replace(/\\/g, '/').endsWith('migrateToPostgres.ts')) {
   runPostgresMigration()
     .then(() => process.exit(0))
     .catch(err => {
-      console.error('Migration error:', err.message);
+      console.error('\n[MIGRATION ERROR]:', err.message);
       process.exit(1);
     });
 }
