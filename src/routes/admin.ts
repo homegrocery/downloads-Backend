@@ -209,6 +209,96 @@ adminRouter.post('/recovery-requests/:id/reject', requireAdmin, (req: Authentica
   }
 });
 
+// Permanent Single Recovery Request Deletion
+adminRouter.post('/recovery-requests/:id/delete', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const requestId = req.params.id;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.deleteRecoveryRequest({
+      requestId,
+      adminUserId: req.user!.id,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Recovery request permanently deleted',
+      messageMr: 'रिकव्हरी विनंती कायमस्वरूपी हटवली आहे',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.delete('/recovery-requests/:id', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const requestId = req.params.id;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.deleteRecoveryRequest({
+      requestId,
+      adminUserId: req.user!.id,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Recovery request permanently deleted',
+      messageMr: 'रिकव्हरी विनंती कायमस्वरूपी हटवली आहे',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Permanent Bulk Recovery Requests Deletion
+adminRouter.post('/recovery-requests/bulk-delete', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { confirmationPhrase } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.bulkDeleteRecoveryRequests({
+      adminUserId: req.user!.id,
+      confirmationPhrase,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: `Permanently deleted ${result.deletedCount} recovery request(s)`,
+      messageMr: `${result.deletedCount} रिकव्हरी विनंत्या कायमस्वरूपी हटवल्या आहेत`,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.delete('/recovery-requests', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { confirmationPhrase } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.bulkDeleteRecoveryRequests({
+      adminUserId: req.user!.id,
+      confirmationPhrase,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: `Permanently deleted ${result.deletedCount} recovery request(s)`,
+      messageMr: `${result.deletedCount} रिकव्हरी विनंत्या कायमस्वरूपी हटवल्या आहेत`,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Permanent Single Account Deletion
 adminRouter.post('/accounts/:id/delete', requireAdmin, async (req: AuthenticatedRequest, res, next) => {
   try {
@@ -317,6 +407,96 @@ adminRouter.post('/audit-logs/archive-all', requireAdmin, (req: AuthenticatedReq
       success: true,
       message: `Archived ${result.count} audit entry/entries from active view`,
       messageMr: `${result.count} ऑडिट नोंदी सक्रिय दृश्यातून संग्रहित केल्या`,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Permanent Single Archived Audit Log Deletion
+adminRouter.post('/audit-logs/:id/delete', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const logId = req.params.id;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.deleteArchivedAuditLog({
+      id: logId,
+      adminUserId: req.user!.id,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Archived audit log entry permanently deleted',
+      messageMr: 'संग्रहित ऑडिट लॉग नोंद कायमस्वरूपी हटवली आहे',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.delete('/audit-logs/:id', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const logId = req.params.id;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.deleteArchivedAuditLog({
+      id: logId,
+      adminUserId: req.user!.id,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Archived audit log entry permanently deleted',
+      messageMr: 'संग्रहित ऑडिट लॉग नोंद कायमस्वरूपी हटवली आहे',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Permanent Bulk Archived Audit Logs Deletion
+adminRouter.post('/audit-logs/bulk-delete-archived', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { confirmationPhrase } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.bulkDeleteArchivedAuditLogs({
+      adminUserId: req.user!.id,
+      confirmationPhrase,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: `Permanently deleted ${result.count} archived audit log(s)`,
+      messageMr: `${result.count} संग्रहित ऑडिट नोंदी कायमस्वरूपी हटवल्या आहेत`,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.delete('/audit-logs/archived', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { confirmationPhrase } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.bulkDeleteArchivedAuditLogs({
+      adminUserId: req.user!.id,
+      confirmationPhrase,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: `Permanently deleted ${result.count} archived audit log(s)`,
+      messageMr: `${result.count} संग्रहित ऑडिट नोंदी कायमस्वरूपी हटवल्या आहेत`,
       data: result
     });
   } catch (err) {

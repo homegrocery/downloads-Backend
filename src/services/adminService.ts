@@ -818,6 +818,169 @@ export class AdminService {
   }
 
   /**
+   * Permanently delete a single recovery request by ID.
+   * Revokes any associated temporary codes and authorizations so they cannot remain usable.
+   * User accounts, PIN hashes, and permanent recovery codes are never touched.
+   */
+  static deleteRecoveryRequest(params: {
+    requestId: string;
+    adminUserId: string;
+    ipAddress?: string;
+  }): {
+    success: boolean;
+    id: string;
+    revokedAuthorizations: number;
+    deletedTempCodes: number;
+  } {
+    const db = getDatabase();
+    const reqRecord = db.prepare('SELECT * FROM recovery_requests WHERE id = ?').get(params.requestId) as RecoveryRequestRecord | undefined;
+
+    if (!reqRecord) {
+      const err: any = new Error('REQUEST_NOT_FOUND: Recovery request does not exist');
+      err.status = 404;
+      err.code = 'REQUEST_NOT_FOUND';
+      err.errorMr = 'रिकव्हरी विनंती आढळली नाही';
+      throw err;
+    }
+
+    let revokedAuthorizations = 0;
+    let deletedTempCodes = 0;
+
+    db.transaction(() => {
+      // 1. If this request has an approved code hash, find matching temporary codes
+      if (reqRecord.approved_code_hash) {
+        const tempCodes = db.prepare(`
+          SELECT id FROM recovery_codes
+          WHERE status = 'TEMPORARY' AND code_hash = ?
+        `).all(reqRecord.approved_code_hash) as Array<{ id: string }>;
+
+        for (const tc of tempCodes) {
+          const authDel = db.prepare('DELETE FROM recovery_authorizations WHERE recovery_code_id = ?').run(tc.id);
+          revokedAuthorizations += authDel.changes;
+        }
+
+        const codeDel = db.prepare(`
+          DELETE FROM recovery_codes
+          WHERE status = 'TEMPORARY' AND code_hash = ?
+        `).run(reqRecord.approved_code_hash);
+        deletedTempCodes += codeDel.changes;
+      }
+
+      // Also revoke any authorizations tied to temporary codes for this user if request was linked to user
+      if (reqRecord.user_id) {
+        const userTempAuths = db.prepare(`
+          DELETE FROM recovery_authorizations
+          WHERE user_id = ?
+            AND recovery_code_id IN (SELECT id FROM recovery_codes WHERE status = 'TEMPORARY')
+        `).run(reqRecord.user_id);
+        revokedAuthorizations += userTempAuths.changes;
+      }
+
+      // 2. Delete the recovery request itself
+      db.prepare('DELETE FROM recovery_requests WHERE id = ?').run(reqRecord.id);
+    })();
+
+    // 3. Log audit event into active logs
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'RECOVERY_REQUEST_DELETED',
+      targetAccountId: reqRecord.user_id,
+      targetMobileNumber: reqRecord.mobile_number,
+      details: {
+        requestId: reqRecord.id,
+        status: reqRecord.status,
+        revokedAuthorizations,
+        deletedTempCodes
+      },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      id: reqRecord.id,
+      revokedAuthorizations,
+      deletedTempCodes
+    };
+  }
+
+  /**
+   * Permanently delete all recovery requests in one confirmed transaction.
+   * Requires exact confirmation phrase: "DELETE ALL RECOVERY REQUESTS".
+   * Revokes all outstanding temporary recovery authorizations and deletes temporary recovery codes.
+   * User accounts, PIN hashes, and permanent recovery codes are never touched.
+   */
+  static bulkDeleteRecoveryRequests(params: {
+    adminUserId: string;
+    confirmationPhrase: string;
+    ipAddress?: string;
+  }): {
+    success: boolean;
+    deletedCount: number;
+    deletedAt: string;
+    revokedAuthorizations: number;
+    deletedTempCodes: number;
+  } {
+    if (!params.confirmationPhrase || params.confirmationPhrase.trim() !== 'DELETE ALL RECOVERY REQUESTS') {
+      const err: any = new Error('CONFIRMATION_MISMATCH: Confirmation phrase must be DELETE ALL RECOVERY REQUESTS');
+      err.status = 400;
+      err.code = 'CONFIRMATION_MISMATCH';
+      err.errorMr = 'खात्री शब्द DELETE ALL RECOVERY REQUESTS असणे आवश्यक आहे';
+      throw err;
+    }
+
+    const db = getDatabase();
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM recovery_requests').get() as { count: number };
+    const actualCount = countRow ? countRow.count : 0;
+    const nowIso = new Date().toISOString();
+
+    let revokedAuthorizations = 0;
+    let deletedTempCodes = 0;
+
+    if (actualCount > 0) {
+      db.transaction(() => {
+        // Revoke all authorizations referencing TEMPORARY recovery codes
+        const authDel = db.prepare(`
+          DELETE FROM recovery_authorizations
+          WHERE recovery_code_id IN (SELECT id FROM recovery_codes WHERE status = 'TEMPORARY')
+        `).run();
+        revokedAuthorizations = authDel.changes;
+
+        // Delete all TEMPORARY recovery codes (preserving ACTIVE permanent codes)
+        const codeDel = db.prepare(`
+          DELETE FROM recovery_codes
+          WHERE status = 'TEMPORARY'
+        `).run();
+        deletedTempCodes = codeDel.changes;
+
+        // Delete all recovery requests
+        db.prepare('DELETE FROM recovery_requests').run();
+      })();
+    }
+
+    // Record audit event in active audit log
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'RECOVERY_REQUESTS_BULK_DELETED',
+      details: {
+        deletedCount: actualCount,
+        confirmationPhrase: params.confirmationPhrase.trim(),
+        deletedAt: nowIso,
+        revokedAuthorizations,
+        deletedTempCodes
+      },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      deletedCount: actualCount,
+      deletedAt: nowIso,
+      revokedAuthorizations,
+      deletedTempCodes
+    };
+  }
+
+  /**
    * Permanent Account Deletion across SQLite and Firestore.
    * Requires exact confirmation of mobile number and confirmation phrase ("DELETE").
    */
@@ -1180,6 +1343,113 @@ export class AdminService {
       success: true,
       count,
       archived_at: nowIso
+    };
+  }
+
+  /**
+   * Permanently delete a single archived audit log entry by ID.
+   * Strictly enforces is_archived = 1; attempting to delete an active log is forbidden.
+   */
+  static deleteArchivedAuditLog(params: {
+    id: string;
+    adminUserId: string;
+    ipAddress?: string;
+  }): {
+    success: boolean;
+    id: string;
+    deletedAt: string;
+  } {
+    const db = getDatabase();
+    const entry = db.prepare('SELECT * FROM admin_audit_logs WHERE id = ?').get(params.id) as AdminAuditLogRecord | undefined;
+
+    if (!entry) {
+      const err: any = new Error('NOT_FOUND: Audit log entry does not exist');
+      err.status = 404;
+      err.code = 'NOT_FOUND';
+      err.errorMr = 'ऑडिट लॉग नोंद आढळली नाही';
+      throw err;
+    }
+
+    if (!entry.is_archived) {
+      const err: any = new Error('CANNOT_DELETE_ACTIVE_LOG: Only archived audit logs can be permanently deleted');
+      err.status = 400;
+      err.code = 'CANNOT_DELETE_ACTIVE_LOG';
+      err.errorMr = 'केवळ संग्रहित ऑडिट लॉग कायमचे हटवले जाऊ शकतात';
+      throw err;
+    }
+
+    const nowIso = new Date().toISOString();
+    db.prepare('DELETE FROM admin_audit_logs WHERE id = ? AND is_archived = 1').run(entry.id);
+
+    // Record audit event into ACTIVE logs (is_archived = 0)
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'ARCHIVED_AUDIT_LOG_DELETED',
+      targetAccountId: entry.target_account_id,
+      targetMobileNumber: entry.target_mobile_number,
+      details: {
+        deletedLogId: entry.id,
+        previousAction: entry.action,
+        deletedAt: nowIso
+      },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      id: entry.id,
+      deletedAt: nowIso
+    };
+  }
+
+  /**
+   * Permanently delete all archived audit log entries in one confirmed operation.
+   * Requires exact confirmation phrase: "DELETE ALL ARCHIVED LOGS".
+   * Strictly deletes records with is_archived = 1. Active audit logs are NEVER deleted.
+   * A new active audit event is recorded in Active Logs.
+   */
+  static bulkDeleteArchivedAuditLogs(params: {
+    adminUserId: string;
+    confirmationPhrase: string;
+    ipAddress?: string;
+  }): {
+    success: boolean;
+    count: number;
+    deletedAt: string;
+  } {
+    if (!params.confirmationPhrase || params.confirmationPhrase.trim() !== 'DELETE ALL ARCHIVED LOGS') {
+      const err: any = new Error('CONFIRMATION_MISMATCH: Confirmation phrase must be DELETE ALL ARCHIVED LOGS');
+      err.status = 400;
+      err.code = 'CONFIRMATION_MISMATCH';
+      err.errorMr = 'खात्री शब्द DELETE ALL ARCHIVED LOGS असणे आवश्यक आहे';
+      throw err;
+    }
+
+    const db = getDatabase();
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM admin_audit_logs WHERE is_archived = 1').get() as { count: number };
+    const count = countRow ? countRow.count : 0;
+    const nowIso = new Date().toISOString();
+
+    if (count > 0) {
+      db.prepare('DELETE FROM admin_audit_logs WHERE is_archived = 1').run();
+    }
+
+    // Insert active bulk delete event (is_archived = 0 so it stays visible in active logs)
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'ARCHIVED_AUDIT_LOGS_BULK_DELETED',
+      details: {
+        deletedCount: count,
+        confirmationPhrase: params.confirmationPhrase.trim(),
+        deletedAt: nowIso
+      },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      count,
+      deletedAt: nowIso
     };
   }
 
