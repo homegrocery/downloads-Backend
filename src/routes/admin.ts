@@ -349,6 +349,56 @@ adminRouter.post('/accounts/bulk-delete', requireAdmin, async (req: Authenticate
   }
 });
 
+// Lock User Account (Feature 3)
+adminRouter.post('/accounts/:id/lock', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const targetAccountId = req.params.id;
+    const { reason } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.lockAccount({
+      adminUserId: req.user!.id,
+      targetAccountId,
+      reason,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Account locked successfully',
+      messageMr: 'खाते यशस्वीरित्या लॉक केले',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Activate User Account (Feature 3)
+adminRouter.post('/accounts/:id/activate', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const targetAccountId = req.params.id;
+    const { reason } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = AdminService.activateAccount({
+      adminUserId: req.user!.id,
+      targetAccountId,
+      reason,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Account activated successfully',
+      messageMr: 'खाते यशस्वीरित्या सक्रिय केले',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Security & Audit Logs (Active view by default, archived optionally)
 adminRouter.get('/audit-logs', requireAdmin, (req: AuthenticatedRequest, res, next) => {
   try {

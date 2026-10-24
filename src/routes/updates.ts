@@ -28,11 +28,19 @@ export interface UpdateManifest {
 }
 
 function getDefaultManifest(): UpdateManifest {
+  const candidateBuild5 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build5.apk');
+  const candidateBuild4 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build4.apk');
   const candidateBuild2 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build2.apk');
   const candidateBuild1 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build1.apk');
-  const apkPath = fs.existsSync(candidateBuild2) ? candidateBuild2 : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'));
-  let apkSize = 8894137;
-  let sha256 = '7F6477CFADFE772DA89C35770337FD4AD0EE92B441F7A4AAFC09BF1C5D2AE244';
+  const apkPath = fs.existsSync(candidateBuild5)
+    ? candidateBuild5
+    : (fs.existsSync(candidateBuild4)
+      ? candidateBuild4
+      : (fs.existsSync(candidateBuild2)
+        ? candidateBuild2
+        : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'))));
+  let apkSize = 8835946;
+  let sha256 = '840bd65de630833cb04c086c1c19282b5eb5127b17c7f09c187beacec3a75439';
 
   if (fs.existsSync(apkPath)) {
     const stats = fs.statSync(apkPath);
@@ -44,12 +52,12 @@ function getDefaultManifest(): UpdateManifest {
   return {
     hasUpdate: false,
     latestVersion: '1.0.1',
-    latestBuild: 2,
+    latestBuild: 5,
     isMandatory: false,
     minSupportedBuild: 1,
-    releaseNotes: 'Home Grocery v1.0.1 (Build 2) — In-app APK updater, Firebase Cloud Sync, and App Server Status fixes.',
-    releaseNotesMr: 'घरगुती किराणा यादी v1.0.1 (Build 2) — इन-ॲप अपडेटर, फायरबेस क्लाउड सिंक, आणि सर्व्हर स्थिती सुधारणा.',
-    apkUrl: 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build2.apk',
+    releaseNotes: 'Home Grocery v1.0.1 (Build 5) — Recovery Code Live Sync, Account Lock/Activate, and Firebase Security Rules.',
+    releaseNotesMr: 'घरगुती किराणा यादी v1.0.1 (Build 5) — रिकव्हरी कोड लाइव्ह सिंक, खाते लॉक/सक्रिय सुविधा, आणि फायरबेस सुरक्षा नियम.',
+    apkUrl: 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build5.apk',
     apkSize,
     sha256,
     publishedAt: new Date().toISOString()

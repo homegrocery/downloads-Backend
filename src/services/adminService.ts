@@ -540,8 +540,10 @@ export class AdminService {
       last_login_at: r.last_login_at || null,
       is_locked: Boolean(r.locked_until && new Date(r.locked_until).getTime() > now),
       has_recovery_code: Number(r.active_recovery_count) > 0,
+      has_active_recovery_code: Number(r.active_recovery_count) > 0,
       recovery_locked_until: r.recovery_locked_until,
       pending_recovery_request_id: r.pending_recovery_request_id || null,
+      has_pending_recovery_request: Boolean(r.pending_recovery_request_id),
       pending_recovery_status: r.pending_recovery_status || null
     }));
 
@@ -1520,6 +1522,128 @@ export class AdminService {
       page,
       limit,
       totalPages
+    };
+  }
+
+  /**
+   * Lock a user account administratively (Feature 3).
+   * Sets locked_until to a distant future date (year 9999), invalidates all active sessions,
+   * and records an audit log entry.
+   * Owner and admin accounts are strictly protected.
+   */
+  static lockAccount(params: {
+    adminUserId: string;
+    targetAccountId: string;
+    reason?: string;
+    ipAddress?: string;
+  }): { success: boolean; is_locked: boolean; account_id: string } {
+    const db = getDatabase();
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(params.targetAccountId) as User | undefined;
+
+    if (!user) {
+      const err: any = new Error('USER_NOT_FOUND: User does not exist');
+      err.status = 404;
+      err.code = 'USER_NOT_FOUND';
+      err.errorMr = 'वापरकर्ता अस्तित्वात नाही';
+      throw err;
+    }
+
+    if (user.id === params.adminUserId) {
+      const err: any = new Error('CANNOT_LOCK_SELF: Administrators cannot lock their own active account');
+      err.status = 400;
+      err.code = 'CANNOT_LOCK_SELF';
+      err.errorMr = 'प्रशासक स्वतःचे खाते लॉक करू शकत नाहीत';
+      throw err;
+    }
+
+    if (user.role === 'admin' || user.mobile_number === '9356755100' || user.mobile_number === config.adminMobileNumber) {
+      const err: any = new Error('CANNOT_LOCK_OWNER: Administrator and owner accounts are strictly protected from lockout');
+      err.status = 400;
+      err.code = 'CANNOT_LOCK_OWNER';
+      err.errorMr = 'प्रशासक आणि मालक खाती सुरक्षित आहेत आणि लॉक करता येत नाहीत';
+      throw err;
+    }
+
+    const lockedUntil = '9999-12-31T23:59:59.999Z';
+    const nowIso = new Date().toISOString();
+
+    db.transaction(() => {
+      // 1. Update user locked_until
+      db.prepare(`
+        UPDATE users
+        SET locked_until = ?, updated_at = ?
+        WHERE id = ?
+      `).run(lockedUntil, nowIso, user.id);
+
+      // 2. Invalidate all active authentication sessions
+      db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
+    })();
+
+    // 3. Log admin audit event
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'ACCOUNT_LOCKED',
+      targetAccountId: user.id,
+      targetMobileNumber: user.mobile_number,
+      details: {
+        reason: params.reason || 'Administrative account lockout',
+        locked_until: lockedUntil
+      },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      is_locked: true,
+      account_id: user.id
+    };
+  }
+
+  /**
+   * Activate (unlock) a user account administratively (Feature 3).
+   * Clears locked_until and resets failed_login_attempts.
+   */
+  static activateAccount(params: {
+    adminUserId: string;
+    targetAccountId: string;
+    reason?: string;
+    ipAddress?: string;
+  }): { success: boolean; is_locked: boolean; account_id: string } {
+    const db = getDatabase();
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(params.targetAccountId) as User | undefined;
+
+    if (!user) {
+      const err: any = new Error('USER_NOT_FOUND: User does not exist');
+      err.status = 404;
+      err.code = 'USER_NOT_FOUND';
+      err.errorMr = 'वापरकर्ता अस्तित्वात नाही';
+      throw err;
+    }
+
+    const nowIso = new Date().toISOString();
+
+    db.prepare(`
+      UPDATE users
+      SET locked_until = NULL, failed_login_attempts = 0, updated_at = ?
+      WHERE id = ?
+    `).run(nowIso, user.id);
+
+    // Log admin audit event
+    this.logAudit({
+      adminUserId: params.adminUserId,
+      action: 'ACCOUNT_ACTIVATED',
+      targetAccountId: user.id,
+      targetMobileNumber: user.mobile_number,
+      details: {
+        reason: params.reason || 'Administrative account activation'
+      },
+      ipAddress: params.ipAddress
+    });
+
+    return {
+      success: true,
+      is_locked: false,
+      account_id: user.id
     };
   }
 }

@@ -133,6 +133,9 @@ export class AuthService {
       const lockExpiry = new Date(user.locked_until);
       if (lockExpiry > now) {
         const remainingMinutes = Math.ceil((lockExpiry.getTime() - now.getTime()) / (60 * 1000));
+        if (remainingMinutes > 24 * 60) {
+          throw new Error('ACCOUNT_LOCKED: Account is administratively locked. Please contact the administrator.');
+        }
         throw new Error(`ACCOUNT_LOCKED: Account is temporarily locked. Try again in ${remainingMinutes} minutes.`);
       }
     }
@@ -330,6 +333,11 @@ export class AuthService {
     `).get(tokenHash, now) as (User & { session_id: string }) | undefined;
 
     if (!row) return null;
+
+    // Reject session if account is locked
+    if (row.locked_until && new Date(row.locked_until).getTime() > Date.now()) {
+      return null;
+    }
 
     // Update last_active_at
     db.prepare('UPDATE authentication_sessions SET last_active_at = ? WHERE id = ?').run(now, row.session_id);
