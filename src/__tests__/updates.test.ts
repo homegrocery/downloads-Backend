@@ -21,13 +21,13 @@ describe('APK Update Management API', () => {
 
   it('checks for updates and returns up-to-date state for current build', async () => {
     const res = await request(app)
-      .get('/api/updates/check?clientVersion=1.0.0&clientBuild=5')
+      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=2')
       .expect(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.hasUpdate).toBe(false);
-    expect(res.body.data.latestVersion).toBe('1.0.0');
-    expect(res.body.data.latestBuild).toBe(5);
+    expect(res.body.data.latestVersion).toBe('1.0.1');
+    expect(res.body.data.latestBuild).toBe(2);
     expect(res.body.data.sha256).toBeDefined();
     expect(res.body.data.apkSize).toBeGreaterThan(0);
   });

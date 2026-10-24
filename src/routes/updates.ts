@@ -28,9 +28,11 @@ export interface UpdateManifest {
 }
 
 function getDefaultManifest(): UpdateManifest {
-  const apkPath = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk');
-  let apkSize = 4122700;
-  let sha256 = '98a350155b5e1a82747d7699d4bb2c2ac94893d73e964a139c2f9b25d86e0ea1';
+  const candidateBuild2 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build2.apk');
+  const candidateBuild1 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build1.apk');
+  const apkPath = fs.existsSync(candidateBuild2) ? candidateBuild2 : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'));
+  let apkSize = 9395829;
+  let sha256 = '957614D6B9CDB44AFD377CCC6F17038263C11AED286C6F5235D4738421EB4657';
 
   if (fs.existsSync(apkPath)) {
     const stats = fs.statSync(apkPath);
@@ -41,13 +43,13 @@ function getDefaultManifest(): UpdateManifest {
 
   return {
     hasUpdate: false,
-    latestVersion: '1.0.0',
-    latestBuild: 5,
+    latestVersion: '1.0.1',
+    latestBuild: 2,
     isMandatory: false,
     minSupportedBuild: 1,
-    releaseNotes: 'Home Grocery V1.0.0 — Smart Household Grocery & Budget Manager.',
-    releaseNotesMr: 'घरगुती किराणा यादी V1.0.0 — घरातील किराणा सामान आणि अंदाजपत्रक व्यवस्थापक.',
-    apkUrl: '/api/updates/download/HomeGrocery-v1.0.0-debug.apk',
+    releaseNotes: 'Home Grocery v1.0.1 (Build 2) — In-app APK updater, Firebase Cloud Sync, and App Server Status fixes.',
+    releaseNotesMr: 'घरगुती किराणा यादी v1.0.1 (Build 2) — इन-ॲप अपडेटर, फायरबेस क्लाउड सिंक, आणि सर्व्हर स्थिती सुधारणा.',
+    apkUrl: 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build2.apk',
     apkSize,
     sha256,
     publishedAt: new Date().toISOString()

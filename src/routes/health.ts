@@ -25,19 +25,9 @@ healthRouter.get('/health', async (req, res) => {
       });
       const client = await pool.connect();
       const result = await client.query('SELECT 1 as alive');
-      const tablesRes = await client.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;");
-      const tableCounts: Record<string, number> = {};
-      for (const r of tablesRes.rows) {
-        const cRes = await client.query(`SELECT COUNT(*) as count FROM ${r.table_name}`);
-        tableCounts[r.table_name] = parseInt(cRes.rows[0].count, 10);
-      }
-      const ownerRes = await client.query("SELECT id, mobile_number, role, full_name, pin_length, (pin_hash IS NOT NULL) as has_pin_hash FROM users WHERE mobile_number = '9356755100'");
       client.release();
       await pool.end();
       dbStatus.connected = result.rows.length > 0;
-      (dbStatus as any).tables = tablesRes.rows.map(r => r.table_name);
-      (dbStatus as any).tableCounts = tableCounts;
-      (dbStatus as any).owner = ownerRes.rows[0] || null;
     } catch (err: any) {
       dbStatus.connected = false;
       dbStatus.error = err.message;
@@ -59,7 +49,11 @@ healthRouter.get('/health', async (req, res) => {
     uptimeSeconds: Math.floor(process.uptime()),
     service: config.appName,
     serviceMr: config.appNameMr,
-    database: dbStatus
+    database: {
+      type: dbStatus.type,
+      configured: dbStatus.configured,
+      connected: dbStatus.connected
+    }
   });
 });
 
