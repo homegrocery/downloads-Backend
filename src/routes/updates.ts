@@ -31,8 +31,8 @@ function getDefaultManifest(): UpdateManifest {
   const candidateBuild2 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build2.apk');
   const candidateBuild1 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build1.apk');
   const apkPath = fs.existsSync(candidateBuild2) ? candidateBuild2 : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'));
-  let apkSize = 9395829;
-  let sha256 = '957614D6B9CDB44AFD377CCC6F17038263C11AED286C6F5235D4738421EB4657';
+  let apkSize = 8894137;
+  let sha256 = '7F6477CFADFE772DA89C35770337FD4AD0EE92B441F7A4AAFC09BF1C5D2AE244';
 
   if (fs.existsSync(apkPath)) {
     const stats = fs.statSync(apkPath);
