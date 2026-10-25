@@ -28,47 +28,47 @@ export interface UpdateManifest {
 }
 
 function getDefaultManifest(): UpdateManifest {
+  const candidateBuild7 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build7.apk');
   const candidateBuild6 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build6.apk');
   const candidateBuild5 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build5.apk');
   const candidateBuild4 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build4.apk');
   const candidateBuild2 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build2.apk');
   const candidateBuild1 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build1.apk');
-  const apkPath = fs.existsSync(candidateBuild6)
-    ? candidateBuild6
-    : (fs.existsSync(candidateBuild5)
-      ? candidateBuild5
-      : (fs.existsSync(candidateBuild4)
-        ? candidateBuild4
-        : (fs.existsSync(candidateBuild2)
-          ? candidateBuild2
-          : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk')))));
-  let apkSize = 8840048;
-  let sha256 = 'd3e93293876b1ceef3953e6f256d431b1dc1d9894c2e5512cdd575dbd7714759';
-  let isBuild6 = true;
+  const apkPath = fs.existsSync(candidateBuild7)
+    ? candidateBuild7
+    : (fs.existsSync(candidateBuild6)
+      ? candidateBuild6
+      : (fs.existsSync(candidateBuild5)
+        ? candidateBuild5
+        : (fs.existsSync(candidateBuild4)
+          ? candidateBuild4
+          : (fs.existsSync(candidateBuild2)
+            ? candidateBuild2
+            : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'))))));
+  let apkSize = 9375768;
+  let sha256 = '9db407b3d3eb258c0b90fdbae3f9d6190247e377988ed75177e1540cd780fa21';
+  let buildNumber = 7;
 
   if (fs.existsSync(apkPath)) {
     const stats = fs.statSync(apkPath);
     apkSize = stats.size;
     const buffer = fs.readFileSync(apkPath);
     sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
-    isBuild6 = apkPath.includes('build6');
+    if (apkPath.includes('build7')) buildNumber = 7;
+    else if (apkPath.includes('build6')) buildNumber = 6;
+    else if (apkPath.includes('build5')) buildNumber = 5;
+    else if (apkPath.includes('build4')) buildNumber = 4;
   }
 
   return {
     hasUpdate: false,
     latestVersion: '1.0.1',
-    latestBuild: isBuild6 ? 6 : 5,
+    latestBuild: buildNumber,
     isMandatory: false,
     minSupportedBuild: 1,
-    releaseNotes: isBuild6
-      ? 'Home Grocery v1.0.1 (Build 6) — Login attempt counter, automatic & administrative account lockout, reactivation requests & admin approvals.'
-      : 'Home Grocery v1.0.1 (Build 5) — Recovery Code Live Sync, Account Lock/Activate, and Firebase Security Rules.',
-    releaseNotesMr: isBuild6
-      ? 'घरगुती किराणा यादी v1.0.1 (Build 6) — लॉगिन प्रयत्न मोजणी, स्वयंचलित व प्रशासकीय खाते लॉक, पुन्हा सक्रिय करण्याची विनंती व प्रशासकीय मंजुरी.'
-      : 'घरगुती किराणा यादी v1.0.1 (Build 5) — रिकव्हरी कोड लाइव्ह सिंक, खाते लॉक/सक्रिय सुविधा, आणि फायरबेस सुरक्षा नियम.',
-    apkUrl: isBuild6
-      ? 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build6.apk'
-      : 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build5.apk',
+    releaseNotes: 'Home Grocery v1.0.1 (Build 7) — Roman Marathi typing transliteration, Add Item required Marathi name, and verified download integrity.',
+    releaseNotesMr: 'घरगुती किराणा यादी v1.0.1 (Build 7) — रोमन मराठी टायपिंग व देवनागरी सूचना, नवीन वस्तूंसाठी आवश्यक मराठी नाव आणि १००% सुरक्षित डाऊनलोड.',
+    apkUrl: `https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build${buildNumber}.apk`,
     apkSize,
     sha256,
     publishedAt: new Date().toISOString()

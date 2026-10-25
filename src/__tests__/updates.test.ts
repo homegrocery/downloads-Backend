@@ -21,40 +21,40 @@ describe('APK Update Management API', () => {
 
   it('checks for updates and returns up-to-date state for current build', async () => {
     const res = await request(app)
-      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=6')
+      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=7')
       .expect(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.hasUpdate).toBe(false);
     expect(res.body.data.latestVersion).toBe('1.0.1');
-    expect(res.body.data.latestBuild).toBe(6);
+    expect(res.body.data.latestBuild).toBe(7);
     expect(res.body.data.sha256).toBeDefined();
     expect(res.body.data.apkSize).toBeGreaterThan(0);
   });
 
   it('detects available update when a newer build is staged', async () => {
-    // Stage version 1.0.1 (build 7)
+    // Stage version 1.0.1 (build 8)
     await request(app)
       .post('/api/updates/stage')
       .send({
         latestVersion: '1.0.1',
-        latestBuild: 7,
+        latestBuild: 8,
         isMandatory: true,
-        minSupportedBuild: 7,
+        minSupportedBuild: 8,
         releaseNotes: 'New feature release',
         releaseNotesMr: 'नवीन वैशिष्ट्ये जोडली'
       })
       .expect(200);
 
-    // Client with build 6 queries
+    // Client with build 7 queries
     const res = await request(app)
-      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=6')
+      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=7')
       .expect(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.hasUpdate).toBe(true);
     expect(res.body.data.latestVersion).toBe('1.0.1');
-    expect(res.body.data.latestBuild).toBe(7);
+    expect(res.body.data.latestBuild).toBe(8);
     expect(res.body.data.isMandatory).toBe(true);
   });
 
