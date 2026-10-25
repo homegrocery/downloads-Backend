@@ -48,7 +48,7 @@ function getDefaultManifest(): UpdateManifest {
             ? candidateBuild2
             : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'))))));
   let apkSize = 9378245;
-  let sha256 = 'd782b1ec4f46b07de90385759ddf9e298f98c37e8b03fde0e28642b7412ebe57';
+  let sha256 = '200090e78450ad7b719b0615239ff1b1493ec1900f6879b7dc26bd39a83d81d6';
   let buildNumber = 7;
 
   if (fs.existsSync(apkPath)) {
