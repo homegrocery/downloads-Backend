@@ -15,6 +15,8 @@ const MANIFEST_FILE = path.resolve(process.cwd(), 'data', 'update-manifest.json'
 
 export interface UpdateManifest {
   hasUpdate: boolean;
+  packageId: string;
+  versionCode: number;
   latestVersion: string;
   latestBuild: number;
   isMandatory: boolean;
@@ -45,8 +47,8 @@ function getDefaultManifest(): UpdateManifest {
           : (fs.existsSync(candidateBuild2)
             ? candidateBuild2
             : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'))))));
-  let apkSize = 9375768;
-  let sha256 = '9db407b3d3eb258c0b90fdbae3f9d6190247e377988ed75177e1540cd780fa21';
+  let apkSize = 9378245;
+  let sha256 = 'd782b1ec4f46b07de90385759ddf9e298f98c37e8b03fde0e28642b7412ebe57';
   let buildNumber = 7;
 
   if (fs.existsSync(apkPath)) {
@@ -62,6 +64,8 @@ function getDefaultManifest(): UpdateManifest {
 
   return {
     hasUpdate: false,
+    packageId: 'com.homegrocery.app',
+    versionCode: 14,
     latestVersion: '1.0.1',
     latestBuild: buildNumber,
     isMandatory: false,
