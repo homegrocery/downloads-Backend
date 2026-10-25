@@ -27,7 +27,9 @@ const TABLES_IN_ORDER = [
   'recovery_codes',
   'recovery_authorizations',
   'recovery_requests',
-  'admin_audit_logs'
+  'admin_audit_logs',
+  'login_attempts',
+  'reactivation_requests'
 ];
 
 export async function initPostgresSync(db: Database.Database, databaseUrl: string): Promise<SyncStats> {
@@ -98,9 +100,11 @@ export async function initPostgresSync(db: Database.Database, databaseUrl: strin
       console.warn('[NEON SYNC] Warning while ensuring nullable price columns on shopping_items:', e.message);
     }
 
-    // Ensure users table has last_login_at column in Neon PostgreSQL and populate historical records
+    // Ensure users table has last_login_at, lock_reason, lock_type columns in Neon PostgreSQL and populate historical records
     try {
       await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ');
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS lock_reason TEXT');
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS lock_type VARCHAR(32)');
       await client.query(`
         UPDATE users
         SET last_login_at = (
@@ -110,7 +114,50 @@ export async function initPostgresSync(db: Database.Database, databaseUrl: strin
           AND EXISTS (SELECT 1 FROM authentication_sessions s WHERE s.user_id = users.id AND s.created_at > users.created_at)
       `);
     } catch (e: any) {
-      console.warn('[NEON SYNC] Warning while checking last_login_at on users:', e.message);
+      console.warn('[NEON SYNC] Warning while checking last_login_at/lock columns on users:', e.message);
+    }
+
+    // Ensure login_attempts and reactivation_requests tables exist in Neon PostgreSQL
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS login_attempts (
+          id VARCHAR(64) PRIMARY KEY,
+          user_id VARCHAR(64) REFERENCES users(id) ON DELETE CASCADE,
+          mobile_number VARCHAR(15) NOT NULL,
+          attempted_at TIMESTAMPTZ NOT NULL,
+          outcome VARCHAR(32) NOT NULL,
+          reason VARCHAR(64) NOT NULL,
+          consecutive_failed_attempts INTEGER NOT NULL DEFAULT 0,
+          lock_triggered INTEGER NOT NULL DEFAULT 0,
+          lock_type VARCHAR(32),
+          ip_address VARCHAR(64),
+          request_id VARCHAR(64)
+        );
+        CREATE INDEX IF NOT EXISTS idx_login_attempts_user ON login_attempts(user_id);
+        CREATE INDEX IF NOT EXISTS idx_login_attempts_mobile ON login_attempts(mobile_number);
+        CREATE INDEX IF NOT EXISTS idx_login_attempts_time ON login_attempts(attempted_at);
+
+        CREATE TABLE IF NOT EXISTS reactivation_requests (
+          id VARCHAR(64) PRIMARY KEY,
+          user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          mobile_number VARCHAR(15) NOT NULL,
+          reason TEXT NOT NULL,
+          status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+          lock_type VARCHAR(32),
+          lock_reason TEXT,
+          failed_attempts_at_lock INTEGER NOT NULL DEFAULT 5,
+          admin_user_id VARCHAR(64),
+          admin_notes TEXT,
+          reviewed_at TIMESTAMPTZ,
+          created_at TIMESTAMPTZ NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_reactivation_req_user ON reactivation_requests(user_id);
+        CREATE INDEX IF NOT EXISTS idx_reactivation_req_status ON reactivation_requests(status);
+        CREATE INDEX IF NOT EXISTS idx_reactivation_req_mobile ON reactivation_requests(mobile_number);
+      `);
+    } catch (e: any) {
+      console.warn('[NEON SYNC] Warning while checking login_attempts/reactivation_requests tables:', e.message);
     }
 
     // 3. Check if Neon has data in users

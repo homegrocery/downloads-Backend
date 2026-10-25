@@ -14,7 +14,7 @@ import {
   decryptTemporaryCode
 } from '../utils/crypto.js';
 import { normalizeMobileNumber, validatePin } from '../utils/validation.js';
-import type { User, SafeUser, RecoveryRequestRecord, AdminAuditLogRecord } from '../types/index.js';
+import type { User, SafeUser, RecoveryRequestRecord, AdminAuditLogRecord, LoginAttemptRecord } from '../types/index.js';
 import { getAdminFirestore } from './firebaseAdmin.js';
 
 export class AdminService {
@@ -449,6 +449,8 @@ export class AdminService {
       updated_at: string;
       failed_login_attempts: number;
       locked_until: string | null;
+      lock_type?: 'AUTOMATIC' | 'ADMINISTRATIVE' | null;
+      lock_reason?: string | null;
       is_locked: boolean;
       has_recovery_code: boolean;
       recovery_locked_until: string | null;
@@ -493,6 +495,8 @@ export class AdminService {
         u.updated_at,
         u.failed_login_attempts,
         u.locked_until,
+        u.lock_type,
+        u.lock_reason,
         u.last_login_at,
         (
           SELECT rc.locked_until 
@@ -537,6 +541,8 @@ export class AdminService {
       updated_at: r.updated_at,
       failed_login_attempts: r.failed_login_attempts,
       locked_until: r.locked_until,
+      lock_type: r.lock_type || null,
+      lock_reason: r.lock_reason || null,
       last_login_at: r.last_login_at || null,
       is_locked: Boolean(r.locked_until && new Date(r.locked_until).getTime() > now),
       has_recovery_code: Number(r.active_recovery_count) > 0,
@@ -1526,9 +1532,9 @@ export class AdminService {
   }
 
   /**
-   * Lock a user account administratively (Feature 3).
+   * Lock a user account administratively (Feature 3 & 4).
    * Sets locked_until to a distant future date (year 9999), invalidates all active sessions,
-   * and records an audit log entry.
+   * stores lock_type = 'ADMINISTRATIVE' and mandatory lock_reason, and records an audit log entry.
    * Owner and admin accounts are strictly protected.
    */
   static lockAccount(params: {
@@ -1564,18 +1570,21 @@ export class AdminService {
       throw err;
     }
 
+    const reason = (params.reason || '').trim() || 'Administrative account lockout';
+
     const lockedUntil = '9999-12-31T23:59:59.999Z';
+    const lockType = 'ADMINISTRATIVE';
     const nowIso = new Date().toISOString();
 
     db.transaction(() => {
-      // 1. Update user locked_until
+      // 1. Update user locked_until, lock_type, lock_reason
       db.prepare(`
         UPDATE users
-        SET locked_until = ?, updated_at = ?
+        SET locked_until = ?, lock_type = ?, lock_reason = ?, updated_at = ?
         WHERE id = ?
-      `).run(lockedUntil, nowIso, user.id);
+      `).run(lockedUntil, lockType, reason, nowIso, user.id);
 
-      // 2. Invalidate all active authentication sessions
+      // 2. Invalidate all active authentication sessions immediately
       db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
     })();
 
@@ -1586,7 +1595,8 @@ export class AdminService {
       targetAccountId: user.id,
       targetMobileNumber: user.mobile_number,
       details: {
-        reason: params.reason || 'Administrative account lockout',
+        reason,
+        lock_type: lockType,
         locked_until: lockedUntil
       },
       ipAddress: params.ipAddress
@@ -1600,8 +1610,8 @@ export class AdminService {
   }
 
   /**
-   * Activate (unlock) a user account administratively (Feature 3).
-   * Clears locked_until and resets failed_login_attempts.
+   * Activate (unlock) a user account administratively (Feature 3 & 4).
+   * Clears locked_until, failed_login_attempts, lock_type and lock_reason.
    */
   static activateAccount(params: {
     adminUserId: string;
@@ -1624,7 +1634,7 @@ export class AdminService {
 
     db.prepare(`
       UPDATE users
-      SET locked_until = NULL, failed_login_attempts = 0, updated_at = ?
+      SET locked_until = NULL, failed_login_attempts = 0, lock_type = NULL, lock_reason = NULL, updated_at = ?
       WHERE id = ?
     `).run(nowIso, user.id);
 
@@ -1644,6 +1654,67 @@ export class AdminService {
       success: true,
       is_locked: false,
       account_id: user.id
+    };
+  }
+
+  /**
+   * Admin: List login attempt audit records with pagination and filters.
+   */
+  static getLoginAttempts(params: {
+    userId?: string;
+    mobileNumber?: string;
+    page?: number;
+    limit?: number;
+  }): {
+    attempts: Array<LoginAttemptRecord & { user_full_name?: string }>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  } {
+    const db = getDatabase();
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(params.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    let whereClause = '1=1';
+    const whereArgs: any[] = [];
+
+    if (params.userId) {
+      whereClause += ' AND (la.user_id = ?)';
+      whereArgs.push(params.userId);
+    }
+
+    if (params.mobileNumber) {
+      const normalized = normalizeMobileNumber(params.mobileNumber) || params.mobileNumber.trim();
+      whereClause += ' AND (la.mobile_number = ?)';
+      whereArgs.push(normalized);
+    }
+
+    const countRow = db.prepare(`
+      SELECT COUNT(*) as count FROM login_attempts la WHERE ${whereClause}
+    `).get(...whereArgs) as { count: number };
+
+    const total = countRow ? countRow.count : 0;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    const rows = db.prepare(`
+      SELECT 
+        la.*,
+        u.full_name as user_full_name
+      FROM login_attempts la
+      LEFT JOIN users u ON la.user_id = u.id
+      WHERE ${whereClause}
+      ORDER BY la.attempted_at DESC
+      LIMIT ? OFFSET ?
+    `).all(...whereArgs, limit, offset) as Array<LoginAttemptRecord & { user_full_name?: string }>;
+
+    return {
+      attempts: rows,
+      total,
+      page,
+      limit,
+      totalPages
     };
   }
 }

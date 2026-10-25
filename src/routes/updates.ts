@@ -28,17 +28,20 @@ export interface UpdateManifest {
 }
 
 function getDefaultManifest(): UpdateManifest {
+  const candidateBuild6 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build6.apk');
   const candidateBuild5 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build5.apk');
   const candidateBuild4 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build4.apk');
   const candidateBuild2 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build2.apk');
   const candidateBuild1 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build1.apk');
-  const apkPath = fs.existsSync(candidateBuild5)
-    ? candidateBuild5
-    : (fs.existsSync(candidateBuild4)
-      ? candidateBuild4
-      : (fs.existsSync(candidateBuild2)
-        ? candidateBuild2
-        : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk'))));
+  const apkPath = fs.existsSync(candidateBuild6)
+    ? candidateBuild6
+    : (fs.existsSync(candidateBuild5)
+      ? candidateBuild5
+      : (fs.existsSync(candidateBuild4)
+        ? candidateBuild4
+        : (fs.existsSync(candidateBuild2)
+          ? candidateBuild2
+          : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk')))));
   let apkSize = 8835946;
   let sha256 = '840bd65de630833cb04c086c1c19282b5eb5127b17c7f09c187beacec3a75439';
 
@@ -49,15 +52,23 @@ function getDefaultManifest(): UpdateManifest {
     sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
   }
 
+  const isBuild6 = apkPath.includes('build6');
+
   return {
     hasUpdate: false,
     latestVersion: '1.0.1',
-    latestBuild: 5,
+    latestBuild: isBuild6 ? 6 : 5,
     isMandatory: false,
     minSupportedBuild: 1,
-    releaseNotes: 'Home Grocery v1.0.1 (Build 5) — Recovery Code Live Sync, Account Lock/Activate, and Firebase Security Rules.',
-    releaseNotesMr: 'घरगुती किराणा यादी v1.0.1 (Build 5) — रिकव्हरी कोड लाइव्ह सिंक, खाते लॉक/सक्रिय सुविधा, आणि फायरबेस सुरक्षा नियम.',
-    apkUrl: 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build5.apk',
+    releaseNotes: isBuild6
+      ? 'Home Grocery v1.0.1 (Build 6) — Login attempt counter, automatic & administrative account lockout, reactivation requests & admin approvals.'
+      : 'Home Grocery v1.0.1 (Build 5) — Recovery Code Live Sync, Account Lock/Activate, and Firebase Security Rules.',
+    releaseNotesMr: isBuild6
+      ? 'घरगुती किराणा यादी v1.0.1 (Build 6) — लॉगिन प्रयत्न मोजणी, स्वयंचलित व प्रशासकीय खाते लॉक, पुन्हा सक्रिय करण्याची विनंती व प्रशासकीय मंजुरी.'
+      : 'घरगुती किराणा यादी v1.0.1 (Build 5) — रिकव्हरी कोड लाइव्ह सिंक, खाते लॉक/सक्रिय सुविधा, आणि फायरबेस सुरक्षा नियम.',
+    apkUrl: isBuild6
+      ? 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build6.apk'
+      : 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build5.apk',
     apkSize,
     sha256,
     publishedAt: new Date().toISOString()

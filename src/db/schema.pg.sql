@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
     preferred_language VARCHAR(5) NOT NULL DEFAULT 'mr',
     failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TIMESTAMPTZ,
+    lock_reason TEXT,
+    lock_type VARCHAR(32), -- 'AUTOMATIC', 'ADMINISTRATIVE'
     pin_length INTEGER NOT NULL DEFAULT 6,
     role VARCHAR(20) NOT NULL DEFAULT 'user',
     last_login_at TIMESTAMPTZ,
@@ -160,4 +162,42 @@ CREATE TABLE IF NOT EXISTS admin_audit_logs (
 CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON admin_audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_archived ON admin_audit_logs(is_archived);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) REFERENCES users(id) ON DELETE CASCADE,
+    mobile_number VARCHAR(15) NOT NULL,
+    attempted_at TIMESTAMPTZ NOT NULL,
+    outcome VARCHAR(32) NOT NULL,
+    reason VARCHAR(64) NOT NULL,
+    consecutive_failed_attempts INTEGER NOT NULL DEFAULT 0,
+    lock_triggered INTEGER NOT NULL DEFAULT 0,
+    lock_type VARCHAR(32),
+    ip_address VARCHAR(64),
+    request_id VARCHAR(64)
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_user ON login_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_mobile ON login_attempts(mobile_number);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_time ON login_attempts(attempted_at);
+
+CREATE TABLE IF NOT EXISTS reactivation_requests (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mobile_number VARCHAR(15) NOT NULL,
+    reason TEXT NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+    lock_type VARCHAR(32),
+    lock_reason TEXT,
+    failed_attempts_at_lock INTEGER NOT NULL DEFAULT 5,
+    admin_user_id VARCHAR(64),
+    admin_notes TEXT,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_reactivation_req_user ON reactivation_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_reactivation_req_status ON reactivation_requests(status);
+CREATE INDEX IF NOT EXISTS idx_reactivation_req_mobile ON reactivation_requests(mobile_number);
 

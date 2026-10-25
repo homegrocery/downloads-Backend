@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AdminService } from '../services/adminService.js';
+import { ReactivationRequestService } from '../services/reactivationRequestService.js';
 import { requireAdmin, type AuthenticatedRequest } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimiter.js';
 
@@ -349,11 +350,18 @@ adminRouter.post('/accounts/bulk-delete', requireAdmin, async (req: Authenticate
   }
 });
 
-// Lock User Account (Feature 3)
+// Lock User Account (Feature 3 & 4)
 adminRouter.post('/accounts/:id/lock', requireAdmin, (req: AuthenticatedRequest, res, next) => {
   try {
     const targetAccountId = req.params.id;
-    const { reason } = req.body;
+    const reason = (req.body?.reason || '').trim();
+    if (!reason) {
+      const err: any = new Error('REASON_REQUIRED: A valid lock reason must be provided');
+      err.status = 400;
+      err.code = 'REASON_REQUIRED';
+      err.errorMr = 'खाते लॉक करण्याचे कारण आवश्यक आहे';
+      throw err;
+    }
     const ip = req.ip || req.socket?.remoteAddress || 'unknown';
 
     const result = AdminService.lockAccount({
@@ -553,4 +561,111 @@ adminRouter.delete('/audit-logs/archived', requireAdmin, (req: AuthenticatedRequ
     next(err);
   }
 });
+
+// Login Attempt History (Global or filtered)
+adminRouter.get('/login-attempts', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { page, limit, userId, mobileNumber } = req.query;
+    const result = AdminService.getLoginAttempts({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      userId: userId as string | undefined,
+      mobileNumber: mobileNumber as string | undefined
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Login Attempt History for specific account
+adminRouter.get('/accounts/:id/login-attempts', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { page, limit } = req.query;
+    const result = AdminService.getLoginAttempts({
+      userId: req.params.id,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reactivation Requests List
+adminRouter.get('/reactivation-requests', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { page, limit, status } = req.query;
+    const result = ReactivationRequestService.getReactivationRequests({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      status: status as string | undefined
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Approve Reactivation Request
+adminRouter.post('/reactivation-requests/:id/approve', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { notes } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = ReactivationRequestService.approveRequest({
+      requestId: req.params.id,
+      adminUserId: req.user!.id,
+      notes,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Reactivation request approved and account activated',
+      messageMr: 'पुन्हा सक्रिय करण्याची विनंती मंजूर झाली असून खाते सक्रिय करण्यात आले आहे',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reject Reactivation Request
+adminRouter.post('/reactivation-requests/:id/reject', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { reason } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const result = ReactivationRequestService.rejectRequest({
+      requestId: req.params.id,
+      adminUserId: req.user!.id,
+      reason,
+      ipAddress: ip
+    });
+
+    res.json({
+      success: true,
+      message: 'Reactivation request rejected',
+      messageMr: 'पुन्हा सक्रिय करण्याची विनंती नाकारण्यात आली आहे',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 

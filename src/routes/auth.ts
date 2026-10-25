@@ -46,10 +46,15 @@ authRouter.post('/register', authLimiter, (req, res, next) => {
 authRouter.post('/login', authLimiter, (req, res, next) => {
   try {
     const { mobileNumber, pin, deviceInfo } = req.body;
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+    const requestId = (req.headers['x-request-id'] as string) || req.body?.requestId;
+
     const result = AuthService.login({
       mobileNumber,
       pin,
-      deviceInfo
+      deviceInfo,
+      ipAddress: ip,
+      requestId
     });
 
     res.json({

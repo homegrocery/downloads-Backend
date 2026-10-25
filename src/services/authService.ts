@@ -108,86 +108,263 @@ export class AuthService {
     return { user: safeUser, token: rawToken, recoveryCode };
   }
 
+  static recordLoginAttempt(params: {
+    userId?: string | null;
+    mobileNumber: string;
+    outcome: 'SUCCESS' | 'FAILURE';
+    reason: 'INCORRECT_PIN' | 'ACCOUNT_LOCKED' | 'INVALID_MOBILE' | 'AUTHENTICATION_ERROR' | 'SUCCESS' | 'ACCOUNT_NOT_FOUND';
+    consecutiveFailedAttempts: number;
+    lockTriggered?: boolean;
+    lockType?: 'AUTOMATIC' | 'ADMINISTRATIVE' | null;
+    ipAddress?: string | null;
+    requestId?: string | null;
+  }): void {
+    try {
+      const db = getDatabase();
+      const id = generateId();
+      const attemptedAt = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO login_attempts (
+          id, user_id, mobile_number, attempted_at, outcome, reason,
+          consecutive_failed_attempts, lock_triggered, lock_type, ip_address, request_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        params.userId || null,
+        params.mobileNumber,
+        attemptedAt,
+        params.outcome,
+        params.reason,
+        params.consecutiveFailedAttempts,
+        params.lockTriggered ? 1 : 0,
+        params.lockType || null,
+        params.ipAddress || null,
+        params.requestId || null
+      );
+    } catch (e) {
+      console.error('Failed to record login attempt:', e);
+    }
+  }
+
   static login(data: {
     mobileNumber: string;
     pin: string;
     deviceInfo?: string;
+    ipAddress?: string;
+    requestId?: string;
   }): { user: SafeUser; token: string } {
-    const normalizedMobile = normalizeMobileNumber(data.mobileNumber);
+    const rawMobile = (data.mobileNumber || '').trim();
+    const normalizedMobile = normalizeMobileNumber(rawMobile);
     if (!normalizedMobile || !validatePin(data.pin)) {
-      throw new Error('INVALID_CREDENTIALS: Invalid mobile number or PIN');
+      AuthService.recordLoginAttempt({
+        userId: null,
+        mobileNumber: (rawMobile || 'unknown').slice(0, 15),
+        outcome: 'FAILURE',
+        reason: !normalizedMobile ? 'INVALID_MOBILE' : 'INCORRECT_PIN',
+        consecutiveFailedAttempts: 0,
+        ipAddress: data.ipAddress,
+        requestId: data.requestId
+      });
+      const err: any = new Error('INVALID_CREDENTIALS: Invalid mobile number or PIN');
+      err.status = 400;
+      err.code = 'INVALID_CREDENTIALS';
+      err.errorMr = 'अवैध मोबाईल क्रमांक किंवा पिन';
+      throw err;
     }
 
     const db = getDatabase();
     const user = db.prepare('SELECT * FROM users WHERE mobile_number = ?').get(normalizedMobile) as User | undefined;
 
     if (!user) {
-      // Prevent user enumeration by returning generic error
-      throw new Error('INVALID_CREDENTIALS: Invalid mobile number or PIN');
+      // Prevent user enumeration by logging internally and returning generic error with no attempt counter
+      AuthService.recordLoginAttempt({
+        userId: null,
+        mobileNumber: normalizedMobile,
+        outcome: 'FAILURE',
+        reason: 'ACCOUNT_NOT_FOUND',
+        consecutiveFailedAttempts: 0,
+        ipAddress: data.ipAddress,
+        requestId: data.requestId
+      });
+      const err: any = new Error('INVALID_CREDENTIALS: Invalid mobile number or PIN');
+      err.status = 400;
+      err.code = 'INVALID_CREDENTIALS';
+      err.errorMr = 'अवैध मोबाईल क्रमांक किंवा पिन';
+      throw err;
     }
 
     const now = new Date();
+    const isOwnerAdmin = normalizedMobile === '9356755100' || user.role === 'admin';
 
     // Check account lockout
+    let isLocked = false;
     if (user.locked_until) {
       const lockExpiry = new Date(user.locked_until);
-      if (lockExpiry > now) {
-        const remainingMinutes = Math.ceil((lockExpiry.getTime() - now.getTime()) / (60 * 1000));
-        if (remainingMinutes > 24 * 60) {
-          throw new Error('ACCOUNT_LOCKED: Account is administratively locked. Please contact the administrator.');
-        }
-        throw new Error(`ACCOUNT_LOCKED: Account is temporarily locked. Try again in ${remainingMinutes} minutes.`);
+      if (lockExpiry.getTime() > now.getTime()) {
+        isLocked = true;
       }
     }
 
-    // Verify PIN length consistency if recorded on user
-    const userPinLength = user.pin_length || 6;
-    if (data.pin.length !== userPinLength) {
-      // Increment failed attempts
-      const newAttempts = user.failed_login_attempts + 1;
-      let lockedUntil: string | null = null;
-      if (newAttempts >= config.maxFailedAttempts) {
-        lockedUntil = new Date(now.getTime() + config.lockoutMinutes * 60 * 1000).toISOString();
-      }
-      db.prepare(`
-        UPDATE users
-        SET failed_login_attempts = ?, locked_until = ?, updated_at = ?
-        WHERE id = ?
-      `).run(newAttempts, lockedUntil, now.toISOString(), user.id);
-      throw new Error('INVALID_CREDENTIALS: Invalid mobile number or PIN');
+    if (isLocked) {
+      AuthService.recordLoginAttempt({
+        userId: user.id,
+        mobileNumber: normalizedMobile,
+        outcome: 'FAILURE',
+        reason: 'ACCOUNT_LOCKED',
+        consecutiveFailedAttempts: user.failed_login_attempts || 5,
+        lockTriggered: false,
+        lockType: user.lock_type || 'AUTOMATIC',
+        ipAddress: data.ipAddress,
+        requestId: data.requestId
+      });
+
+      const isAdministrative = user.lock_type === 'ADMINISTRATIVE';
+      const lockReasonText = user.lock_reason || (isAdministrative ? 'Locked by administrator' : 'Too many failed login attempts (5 of 5)');
+      const err: any = new Error(
+        isAdministrative
+          ? `ACCOUNT_LOCKED: Account is administratively locked. Reason: ${lockReasonText}`
+          : 'ACCOUNT_LOCKED: Your account has been locked after 5 consecutive failed attempts.'
+      );
+      err.status = 423;
+      err.code = 'ACCOUNT_LOCKED';
+      err.lockType = user.lock_type || (isAdministrative ? 'ADMINISTRATIVE' : 'AUTOMATIC');
+      err.lockReason = lockReasonText;
+      err.failedAttempts = user.failed_login_attempts || 5;
+      err.maxAttempts = 5;
+      err.remainingAttempts = 0;
+      err.errorMr = isAdministrative
+        ? `खाते प्रशासकीय कारणास्तव लॉक केले आहे: ${lockReasonText}`
+        : '५ सलग अयशस्वी प्रयत्नांनंतर आपले खाते लॉक केले गेले आहे.';
+      throw err;
     }
 
     // Verify PIN
-    const isValid = verifyPin(data.pin, user.salt, user.pin_hash);
+    const userPinLength = user.pin_length || 6;
+    const isValidLength = data.pin.length === userPinLength;
+    const isValidHash = isValidLength && verifyPin(data.pin, user.salt, user.pin_hash);
 
-    if (!isValid) {
-      const newAttempts = user.failed_login_attempts + 1;
-      let lockedUntil: string | null = null;
-
-      if (newAttempts >= config.maxFailedAttempts) {
-        lockedUntil = new Date(now.getTime() + config.lockoutMinutes * 60 * 1000).toISOString();
+    if (!isValidHash) {
+      if (isOwnerAdmin) {
+        // Owner admin account is protected from lockout
+        AuthService.recordLoginAttempt({
+          userId: user.id,
+          mobileNumber: normalizedMobile,
+          outcome: 'FAILURE',
+          reason: 'INCORRECT_PIN',
+          consecutiveFailedAttempts: 0,
+          ipAddress: data.ipAddress,
+          requestId: data.requestId
+        });
+        const err: any = new Error('INVALID_CREDENTIALS: Incorrect PIN.');
+        err.status = 400;
+        err.code = 'INCORRECT_PIN';
+        err.errorMr = 'चुकीचा पिन.';
+        throw err;
       }
 
-      db.prepare(`
-        UPDATE users
-        SET failed_login_attempts = ?, locked_until = ?, updated_at = ?
-        WHERE id = ?
-      `).run(newAttempts, lockedUntil, now.toISOString(), user.id);
+      const newAttempts = (user.failed_login_attempts || 0) + 1;
+      const maxAttempts = 5;
 
-      if (lockedUntil) {
-        throw new Error(`ACCOUNT_LOCKED: Too many failed attempts. Account locked for ${config.lockoutMinutes} minutes.`);
+      if (newAttempts >= maxAttempts) {
+        // Lock account strictly on 5th consecutive failure
+        const lockIso = '9999-12-31T23:59:59.999Z';
+        const lockType = 'AUTOMATIC';
+        const lockReason = 'Too many failed login attempts (5 of 5)';
+        const nowIso = now.toISOString();
+
+        db.transaction(() => {
+          db.prepare(`
+            UPDATE users
+            SET failed_login_attempts = 5,
+                locked_until = ?,
+                lock_type = ?,
+                lock_reason = ?,
+                updated_at = ?
+            WHERE id = ?
+          `).run(lockIso, lockType, lockReason, nowIso, user.id);
+
+          // Invalidate all active sessions immediately
+          db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
+        })();
+
+        AuthService.recordLoginAttempt({
+          userId: user.id,
+          mobileNumber: normalizedMobile,
+          outcome: 'FAILURE',
+          reason: 'INCORRECT_PIN',
+          consecutiveFailedAttempts: 5,
+          lockTriggered: true,
+          lockType: 'AUTOMATIC',
+          ipAddress: data.ipAddress,
+          requestId: data.requestId
+        });
+
+        const err: any = new Error('ACCOUNT_LOCKED: Your account has been locked after 5 consecutive failed attempts.');
+        err.status = 423;
+        err.code = 'ACCOUNT_LOCKED';
+        err.lockType = lockType;
+        err.lockReason = lockReason;
+        err.failedAttempts = 5;
+        err.maxAttempts = 5;
+        err.remainingAttempts = 0;
+        err.errorMr = '५ सलग अयशस्वी प्रयत्नांनंतर आपले खाते लॉक केले गेले आहे.';
+        throw err;
+      } else {
+        const nowIso = now.toISOString();
+        db.prepare(`
+          UPDATE users
+          SET failed_login_attempts = ?, updated_at = ?
+          WHERE id = ?
+        `).run(newAttempts, nowIso, user.id);
+
+        AuthService.recordLoginAttempt({
+          userId: user.id,
+          mobileNumber: normalizedMobile,
+          outcome: 'FAILURE',
+          reason: 'INCORRECT_PIN',
+          consecutiveFailedAttempts: newAttempts,
+          lockTriggered: false,
+          lockType: null,
+          ipAddress: data.ipAddress,
+          requestId: data.requestId
+        });
+
+        const remaining = maxAttempts - newAttempts;
+        const err: any = new Error(`INVALID_CREDENTIALS: Incorrect PIN. Failed attempts: ${newAttempts} of ${maxAttempts}.`);
+        err.status = 400;
+        err.code = 'INCORRECT_PIN';
+        err.failedAttempts = newAttempts;
+        err.maxAttempts = maxAttempts;
+        err.remainingAttempts = remaining;
+        err.errorMr = `चुकीचा पिन. अयशस्वी प्रयत्न: ${newAttempts} पैकी ५.`;
+        throw err;
       }
-
-      throw new Error('INVALID_CREDENTIALS: Invalid mobile number or PIN');
     }
 
     // Successful login: reset attempts, clear lock, and record genuine last_login_at
     const loginIso = now.toISOString();
     db.prepare(`
       UPDATE users
-      SET failed_login_attempts = 0, locked_until = NULL, last_login_at = ?, updated_at = ?
+      SET failed_login_attempts = 0,
+          locked_until = NULL,
+          lock_type = NULL,
+          lock_reason = NULL,
+          last_login_at = ?,
+          updated_at = ?
       WHERE id = ?
     `).run(loginIso, loginIso, user.id);
+
+    AuthService.recordLoginAttempt({
+      userId: user.id,
+      mobileNumber: normalizedMobile,
+      outcome: 'SUCCESS',
+      reason: 'SUCCESS',
+      consecutiveFailedAttempts: 0,
+      lockTriggered: false,
+      lockType: null,
+      ipAddress: data.ipAddress,
+      requestId: data.requestId
+    });
 
     // Create session
     const { rawToken, tokenHash } = generateSessionToken();
@@ -207,6 +384,8 @@ export class AuthService {
       preferred_language: user.preferred_language,
       failed_login_attempts: 0,
       locked_until: null,
+      lock_type: null,
+      lock_reason: null,
       pin_length: userPinLength,
       role: (user.role || 'user') as 'user' | 'admin',
       last_login_at: loginIso,
@@ -304,7 +483,7 @@ export class AuthService {
       // Update PIN hash, salt, pin_length, reset lockout/attempts
       db.prepare(`
         UPDATE users
-        SET pin_hash = ?, salt = ?, pin_length = ?, failed_login_attempts = 0, locked_until = NULL, updated_at = ?
+        SET pin_hash = ?, salt = ?, pin_length = ?, failed_login_attempts = 0, locked_until = NULL, lock_type = NULL, lock_reason = NULL, updated_at = ?
         WHERE id = ?
       `).run(hash, salt, expectedLength, now, user.id);
 
@@ -349,6 +528,8 @@ export class AuthService {
       preferred_language: row.preferred_language,
       failed_login_attempts: row.failed_login_attempts,
       locked_until: row.locked_until,
+      lock_type: row.lock_type || null,
+      lock_reason: row.lock_reason || null,
       pin_length: row.pin_length || 6,
       role: (row.role || 'user') as 'user' | 'admin',
       created_at: row.created_at,
@@ -750,7 +931,7 @@ export class AuthService {
       // 2. Update user PIN, pin_length, reset login failures & lockout
       db.prepare(`
         UPDATE users
-        SET pin_hash = ?, salt = ?, pin_length = ?, failed_login_attempts = 0, locked_until = NULL, updated_at = ?
+        SET pin_hash = ?, salt = ?, pin_length = ?, failed_login_attempts = 0, locked_until = NULL, lock_type = NULL, lock_reason = NULL, updated_at = ?
         WHERE id = ?
       `).run(hash, salt, expectedLength, nowIso, user.id);
 

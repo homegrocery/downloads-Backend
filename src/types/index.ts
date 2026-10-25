@@ -7,6 +7,8 @@ export interface User {
   preferred_language: 'en' | 'mr';
   failed_login_attempts: number;
   locked_until: string | null;
+  lock_reason?: string | null;
+  lock_type?: 'AUTOMATIC' | 'ADMINISTRATIVE' | null;
   pin_length: number;
   role: 'user' | 'admin';
   last_login_at?: string | null;
@@ -133,5 +135,37 @@ export interface AdminAuditLogRecord {
   is_archived?: number;
   archived_at?: string | null;
   created_at: string;
+}
+
+export interface LoginAttemptRecord {
+  id: string;
+  user_id: string | null;
+  mobile_number: string;
+  attempted_at: string;
+  outcome: 'SUCCESS' | 'FAILURE';
+  reason: 'INCORRECT_PIN' | 'ACCOUNT_LOCKED' | 'INVALID_MOBILE' | 'AUTHENTICATION_ERROR' | 'SUCCESS' | 'ACCOUNT_NOT_FOUND';
+  consecutive_failed_attempts: number;
+  lock_triggered: number;
+  lock_type: 'AUTOMATIC' | 'ADMINISTRATIVE' | null;
+  ip_address: string | null;
+  request_id: string | null;
+}
+
+export type ReactivationRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface ReactivationRequestRecord {
+  id: string;
+  user_id: string;
+  mobile_number: string;
+  reason: string;
+  status: ReactivationRequestStatus;
+  lock_type: 'AUTOMATIC' | 'ADMINISTRATIVE' | null;
+  lock_reason: string | null;
+  failed_attempts_at_lock: number;
+  admin_user_id: string | null;
+  admin_notes: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 

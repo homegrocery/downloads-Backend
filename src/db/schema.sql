@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     preferred_language TEXT NOT NULL DEFAULT 'mr',
     failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TEXT,
+    lock_reason TEXT,
+    lock_type TEXT, -- 'AUTOMATIC', 'ADMINISTRATIVE'
     pin_length INTEGER NOT NULL DEFAULT 6,
     role TEXT NOT NULL DEFAULT 'user',
     last_login_at TEXT,
@@ -171,4 +173,44 @@ CREATE TABLE IF NOT EXISTS admin_audit_logs (
 CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON admin_audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_archived ON admin_audit_logs(is_archived);
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    mobile_number TEXT NOT NULL,
+    attempted_at TEXT NOT NULL,
+    outcome TEXT NOT NULL, -- 'SUCCESS', 'FAILURE'
+    reason TEXT NOT NULL,  -- 'INCORRECT_PIN', 'ACCOUNT_LOCKED', 'INVALID_MOBILE', 'AUTHENTICATION_ERROR', 'SUCCESS', 'ACCOUNT_NOT_FOUND'
+    consecutive_failed_attempts INTEGER NOT NULL DEFAULT 0,
+    lock_triggered INTEGER NOT NULL DEFAULT 0,
+    lock_type TEXT,        -- 'AUTOMATIC', 'ADMINISTRATIVE', NULL
+    ip_address TEXT,
+    request_id TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_user ON login_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_mobile ON login_attempts(mobile_number);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_time ON login_attempts(attempted_at);
+
+CREATE TABLE IF NOT EXISTS reactivation_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    mobile_number TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'APPROVED', 'REJECTED'
+    lock_type TEXT,
+    lock_reason TEXT,
+    failed_attempts_at_lock INTEGER NOT NULL DEFAULT 5,
+    admin_user_id TEXT,
+    admin_notes TEXT,
+    reviewed_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_reactivation_req_user ON reactivation_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_reactivation_req_status ON reactivation_requests(status);
+CREATE INDEX IF NOT EXISTS idx_reactivation_req_mobile ON reactivation_requests(mobile_number);
 

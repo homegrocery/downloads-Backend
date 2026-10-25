@@ -9,6 +9,7 @@ import { categoriesRouter } from './routes/categories.js';
 import { updatesRouter } from './routes/updates.js';
 import { adminRouter } from './routes/admin.js';
 import { recoveryRequestsRouter } from './routes/recoveryRequests.js';
+import { reactivationRequestRouter } from './routes/reactivationRequests.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 export function createApp() {
@@ -44,7 +45,7 @@ export function createApp() {
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Version', 'X-Recovery-Request-Id', 'X-Recovery-Token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Version', 'X-Recovery-Request-Id', 'X-Recovery-Token', 'X-Request-Id'],
     credentials: true,
     optionsSuccessStatus: 204
   };
@@ -81,6 +82,7 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/recovery-requests', recoveryRequestsRouter);
+  app.use('/api/reactivation-requests', reactivationRequestRouter);
   app.use('/api/lists', listsRouter);
   app.use('/api/items', itemsRouter);
   app.use('/api/sync', syncRouter);

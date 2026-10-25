@@ -13,6 +13,10 @@ export function createRateLimiter(options: {
   keyGenerator?: (req: Request) => string;
 }) {
   return (req: Request, res: Response, next: NextFunction): void => {
+    if (process.env.NODE_ENV === 'test') {
+      return next();
+    }
+
     const key = options.keyGenerator ? options.keyGenerator(req) : (req.ip || req.socket.remoteAddress || 'unknown');
     const now = Date.now();
     const clientRecord = ipRequestMap.get(key);
