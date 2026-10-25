@@ -47,6 +47,7 @@ export class ListService {
   }
 
   static createList(userId: string, data: {
+    id?: string;
     title: string;
     monthYear: string;
     monthlyBudget?: number;
@@ -72,7 +73,7 @@ export class ListService {
       throw new Error(`DUPLICATE_MONTH: A grocery list for this month already exists ("${existing.title}")`);
     }
 
-    const id = generateId();
+    const id = (data.id && typeof data.id === 'string' && data.id.trim()) ? data.id.trim() : generateId();
     const now = new Date().toISOString();
     const budget = Math.max(0, Number(data.monthlyBudget) || 0);
 
@@ -207,6 +208,7 @@ export class ListService {
   }
 
   static addItem(userId: string, listId: string, data: {
+    id?: string;
     name: string;
     nameMr?: string;
     quantity: number;
@@ -248,7 +250,7 @@ export class ListService {
     const price = hasPrice ? Math.max(0, Number(data.unitPrice)) : null;
     const estimatedTotal = price !== null ? calculateLineTotal(qty, price) : null;
     const now = new Date().toISOString();
-    const itemId = generateId();
+    const itemId = (data.id && typeof data.id === 'string' && data.id.trim()) ? data.id.trim() : generateId();
 
     // Get next display order
     const maxOrder = db.prepare(`

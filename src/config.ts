@@ -22,8 +22,8 @@ export const config = {
   adminPort: parseInt(process.env.ADMIN_PORT || '3002', 10),
   appName: 'Home Grocery',
   appNameMr: 'घरगुती किराणा यादी',
-  appVersion: '1.0.0',
-  buildNumber: 7,
+  appVersion: '1.0.1',
+  buildNumber: 8,
   attribution: {
     en: 'App developed by Santosh Koli',
     mr: 'संतोष कोळी यांनी विकसित केलेले ॲप'

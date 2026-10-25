@@ -38,6 +38,19 @@ export function initDatabase(dbFilePath?: string): Database.Database {
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
 
+  // Pre-migration for existing disk databases before applying schema.sql indexes
+  try {
+    const auditInfo = db.prepare("PRAGMA table_info(admin_audit_logs)").all() as Array<{ name: string }>;
+    if (auditInfo.length > 0 && !auditInfo.some(col => col.name === 'is_archived')) {
+      db.exec("ALTER TABLE admin_audit_logs ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0");
+    }
+    if (auditInfo.length > 0 && !auditInfo.some(col => col.name === 'archived_at')) {
+      db.exec("ALTER TABLE admin_audit_logs ADD COLUMN archived_at TEXT");
+    }
+  } catch {
+    // ignore
+  }
+
   // Initialize schema
   const candidatePaths = [
     path.resolve(__dirname, 'schema.sql'),

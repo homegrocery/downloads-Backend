@@ -6,10 +6,10 @@ export const syncRouter = Router();
 
 syncRouter.use(requireAuth);
 
-syncRouter.post('/', (req: AuthenticatedRequest, res, next) => {
+syncRouter.post('/', async (req: AuthenticatedRequest, res, next) => {
   try {
     const { mutations } = req.body;
-    const result = SyncService.processSync(req.user!.id, mutations || []);
+    const result = await SyncService.processSync(req.user!.id, mutations || []);
 
     res.json({
       success: true,

@@ -23,6 +23,7 @@ const TABLES_IN_ORDER = [
   'users',
   'shopping_lists',
   'shopping_items',
+  'sync_operations',
   'authentication_sessions',
   'recovery_codes',
   'recovery_authorizations',
@@ -160,6 +161,24 @@ export async function initPostgresSync(db: Database.Database, databaseUrl: strin
       console.warn('[NEON SYNC] Warning while checking login_attempts/reactivation_requests tables:', e.message);
     }
 
+    // Ensure sync_operations table exists in Neon PostgreSQL
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS sync_operations (
+          operation_id VARCHAR(64) PRIMARY KEY,
+          user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          entity_type VARCHAR(32) NOT NULL,
+          entity_id VARCHAR(64) NOT NULL,
+          action VARCHAR(32) NOT NULL,
+          client_timestamp TIMESTAMPTZ,
+          server_timestamp TIMESTAMPTZ NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_sync_user_op ON sync_operations(user_id, operation_id);
+      `);
+    } catch (e: any) {
+      console.warn('[NEON SYNC] Warning while checking sync_operations table:', e.message);
+    }
+
     // 3. Check if Neon has data in users
     const userCountRes = await client.query('SELECT COUNT(*) as count FROM users');
     const userCount = parseInt(userCountRes.rows[0].count, 10);
@@ -263,6 +282,20 @@ export async function initPostgresSync(db: Database.Database, databaseUrl: strin
   return stats;
 }
 
+let pgWriteQueue: Promise<any> = Promise.resolve();
+
+/**
+ * Await all in-flight PostgreSQL mirrored writes to ensure consistency before responding.
+ */
+export async function awaitPendingPostgresWrites(timeoutMs = 8000): Promise<void> {
+  const timeout = new Promise(resolve => setTimeout(resolve, timeoutMs));
+  try {
+    await Promise.race([pgWriteQueue, timeout]);
+  } catch {
+    // handled in queue
+  }
+}
+
 function attachNeonWriteMirror(db: Database.Database, pool: pg.Pool): void {
   const origPrepare = db.prepare.bind(db);
 
@@ -280,11 +313,20 @@ function attachNeonWriteMirror(db: Database.Database, pool: pg.Pool): void {
       // Execute synchronously on SQLite first
       const result = origRun(...params);
 
-      // Asynchronously mirror mutation to Neon PostgreSQL
+      // Clean parameters for PostgreSQL driver: coerce undefined to null
+      const cleanParams = params.map(p => (p === undefined ? null : p));
       const pgSql = convertQuestionMarksToDollarParams(sql);
-      pool.query(pgSql, params).catch((err: any) => {
-        console.error('[NEON WRITE-MIRROR ERROR]:', err.message, '\nSQL:', pgSql);
-      });
+
+      // Enqueue mirrored write in strict sequential order to guarantee foreign key integrity
+      const writeOp = async () => {
+        try {
+          await pool.query(pgSql, cleanParams);
+        } catch (err: any) {
+          console.error('[NEON WRITE-MIRROR ERROR]:', err.message, '\nSQL:', pgSql);
+        }
+      };
+
+      pgWriteQueue = pgWriteQueue.then(writeOp, writeOp);
 
       return result;
     };

@@ -21,42 +21,42 @@ describe('APK Update Management API', () => {
 
   it('checks for updates and returns up-to-date state for current build', async () => {
     const res = await request(app)
-      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=7')
+      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=8')
       .expect(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.hasUpdate).toBe(false);
     expect(res.body.data.packageId).toBe('com.homegrocery.app');
-    expect(res.body.data.versionCode).toBe(14);
+    expect(res.body.data.versionCode).toBe(15);
     expect(res.body.data.latestVersion).toBe('1.0.1');
-    expect(res.body.data.latestBuild).toBe(7);
-    expect(res.body.data.sha256).toBe('200090e78450ad7b719b0615239ff1b1493ec1900f6879b7dc26bd39a83d81d6');
-    expect(res.body.data.apkSize).toBe(9378245);
+    expect(res.body.data.latestBuild).toBe(8);
+    expect(res.body.data.sha256).toBe('93f8817f553590de78ffd2e29e8ff7459176a74365098b921a85d5ddd15ce09e');
+    expect(res.body.data.apkSize).toBe(8850906);
   });
 
   it('detects available update when a newer build is staged', async () => {
-    // Stage version 1.0.1 (build 8)
+    // Stage version 1.0.1 (build 9)
     await request(app)
       .post('/api/updates/stage')
       .send({
         latestVersion: '1.0.1',
-        latestBuild: 8,
+        latestBuild: 9,
         isMandatory: true,
-        minSupportedBuild: 8,
+        minSupportedBuild: 9,
         releaseNotes: 'New feature release',
         releaseNotesMr: 'नवीन वैशिष्ट्ये जोडली'
       })
       .expect(200);
 
-    // Client with build 7 queries
+    // Client with build 8 queries
     const res = await request(app)
-      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=7')
+      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=8')
       .expect(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.hasUpdate).toBe(true);
     expect(res.body.data.latestVersion).toBe('1.0.1');
-    expect(res.body.data.latestBuild).toBe(8);
+    expect(res.body.data.latestBuild).toBe(9);
     expect(res.body.data.isMandatory).toBe(true);
   });
 
