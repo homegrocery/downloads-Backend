@@ -30,8 +30,8 @@ describe('APK Update Management API', () => {
     expect(res.body.data.versionCode).toBe(15);
     expect(res.body.data.latestVersion).toBe('1.0.1');
     expect(res.body.data.latestBuild).toBe(8);
-    expect(res.body.data.sha256).toBe('93f8817f553590de78ffd2e29e8ff7459176a74365098b921a85d5ddd15ce09e');
-    expect(res.body.data.apkSize).toBe(8850906);
+    expect(res.body.data.sha256).toBe('9ace4da60c6fdfb8a44fced3ce43b6d902db97541ebc1664fe85da05ed0069e6');
+    expect(res.body.data.apkSize).toBe(9429395);
   });
 
   it('detects available update when a newer build is staged', async () => {
