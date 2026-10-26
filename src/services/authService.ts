@@ -13,6 +13,7 @@ import {
 import { normalizeMobileNumber, validatePin } from '../utils/validation.js';
 import { FirebaseAuthService } from './firebaseAuthService.js';
 import { AdminService } from './adminService.js';
+import { TelegramService } from './telegramService.js';
 import { config } from '../config.js';
 import type { User, SafeUser, RecoveryCodeRecord, RecoveryAuthorizationRecord, RecoveryRequestRecord } from '../types/index.js';
 
@@ -104,6 +105,15 @@ export class AuthService {
       created_at: now,
       updated_at: now
     };
+
+    // Notify Telegram Admin asynchronously (safe fire-and-forget, never breaks registration)
+    void TelegramService.notifyNewMemberRegistration({
+      mobileNumber: normalizedMobile,
+      fullName,
+      preferredLanguage: lang,
+      role: 'user',
+      createdAt: now
+    }).catch(err => console.warn('[AuthService] Telegram registration notification notice:', err?.message));
 
     return { user: safeUser, token: rawToken, recoveryCode };
   }
@@ -299,6 +309,16 @@ export class AuthService {
           requestId: data.requestId
         });
 
+        // Notify Telegram Admin asynchronously (safe fire-and-forget, never breaks authentication response)
+        void TelegramService.notifyAutomaticAccountLocked({
+          mobileNumber: normalizedMobile,
+          fullName: user.full_name,
+          failedAttempts: 5,
+          lockType: 'AUTOMATIC',
+          reason: lockReason,
+          lockedAt: nowIso
+        }).catch(err => console.warn('[AuthService] Telegram lock alert notice:', err?.message));
+
         const err: any = new Error('ACCOUNT_LOCKED: Your account has been locked after 5 consecutive failed attempts.');
         err.status = 423;
         err.code = 'ACCOUNT_LOCKED';
@@ -442,6 +462,14 @@ export class AuthService {
       db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(userId);
     })();
 
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyPinChanged({
+      userId,
+      mobileNumber: user.mobile_number,
+      fullName: user.full_name,
+      timestamp: now
+    }).catch(err => console.warn('[AuthService] Telegram PIN changed notice:', err?.message));
+
     return true;
   }
 
@@ -491,6 +519,14 @@ export class AuthService {
       db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
     })();
 
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyPinResetSuccess({
+      mobileNumber: normalizedMobile,
+      fullName: user.full_name || null,
+      method: 'PHONE_OTP',
+      timestamp: now
+    }).catch(err => console.warn('[AuthService] Telegram OTP reset notice:', err?.message));
+
     return {
       success: true,
       message: 'PIN has been reset successfully. Please log in with your new PIN.',
@@ -539,7 +575,7 @@ export class AuthService {
 
   static generateRecoveryCodeForUser(userId: string): { recoveryCode: string; isReplacement: boolean } {
     const db = getDatabase();
-    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const user = db.prepare('SELECT id, mobile_number, full_name FROM users WHERE id = ?').get(userId) as User | undefined;
     if (!user) {
       const err: any = new Error('USER_NOT_FOUND: User does not exist');
       err.status = 404;
@@ -571,6 +607,15 @@ export class AuthService {
         ) VALUES (?, ?, ?, ?, 'ACTIVE', 0, NULL, ?, ?)
       `).run(codeId, userId, codeHash, codeSalt, nowIso, nowIso);
     })();
+
+    // Notify Telegram Admin asynchronously (zero code leak)
+    void TelegramService.notifyRecoveryCodeIssued({
+      userId,
+      mobileNumber: user.mobile_number,
+      fullName: user.full_name || null,
+      isReplacement,
+      timestamp: nowIso
+    }).catch(err => console.warn('[AuthService] Telegram recovery code issued notice:', err?.message));
 
     return {
       recoveryCode,
@@ -808,6 +853,14 @@ export class AuthService {
           err.retryAfter = lockedUntil;
           err.errorMr = 'कमाल ४ अयशस्वी प्रयत्न झाले आहेत. खाते रिकव्हरी २४ तासांसाठी बंद केली आहे.';
           lockErr = err;
+
+          // Notify Telegram Admin of suspicious activity
+          void TelegramService.notifySuspiciousRecoveryActivity({
+            mobileNumber: normalizedMobile,
+            failedAttempts: config.recoveryMaxAttempts,
+            lockoutHours: config.recoveryLockoutHours,
+            timestamp: nowIso
+          }).catch(notifyErr => console.warn('[AuthService] Telegram recovery alert notice:', notifyErr?.message));
         } else {
           const err: any = new Error(
             `INVALID_RECOVERY_CODE: Invalid Recovery Code. You have ${remainingAttempts} attempt(s) remaining.`
@@ -966,6 +1019,14 @@ export class AuthService {
       // 5. Invalidate all active sessions for this user
       db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
     })();
+
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyPinResetSuccess({
+      mobileNumber: normalizedMobile,
+      fullName: user.full_name || null,
+      method: 'RECOVERY_CODE',
+      timestamp: nowIso
+    }).catch(err => console.warn('[AuthService] Telegram recovery reset notice:', err?.message));
 
     return {
       success: true,

@@ -4,6 +4,7 @@ import { generateId, hashToken, decryptTemporaryCode } from '../utils/crypto.js'
 import { normalizeMobileNumber } from '../utils/validation.js';
 import type { RecoveryRequestRecord, User } from '../types/index.js';
 import { AdminService } from './adminService.js';
+import { TelegramService } from './telegramService.js';
 
 export class RecoveryRequestService {
   /**
@@ -75,6 +76,14 @@ export class RecoveryRequestService {
       details: { requestId },
       ipAddress: params.ipAddress
     });
+
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyPinRecoveryRequest({
+      requestId,
+      mobileNumber: normalizedMobile,
+      fullName: user?.full_name || null,
+      createdAt: nowIso
+    }).catch(err => console.warn('[RecoveryRequestService] Telegram notification notice:', err?.message));
 
     return {
       requestId,
@@ -200,9 +209,19 @@ export class RecoveryRequestService {
   static cancelRequest(requestId: string, requestToken: string): boolean {
     const tokenHash = hashToken(requestToken.trim());
     const db = getDatabase();
+    const existing = db.prepare('SELECT mobile_number FROM recovery_requests WHERE id = ? AND request_token_hash = ?').get(requestId.trim(), tokenHash) as { mobile_number: string } | undefined;
     const result = db.prepare(`
       DELETE FROM recovery_requests WHERE id = ? AND request_token_hash = ?
     `).run(requestId.trim(), tokenHash);
+
+    if (result.changes > 0) {
+      void TelegramService.notifyRecoveryRequestCancelled({
+        requestId: requestId.trim(),
+        targetMobileNumber: existing?.mobile_number || null,
+        cancelledBy: 'USER'
+      }).catch(err => console.warn('[RecoveryRequestService] Telegram cancel notice:', err?.message));
+    }
+
     return result.changes > 0;
   }
 }

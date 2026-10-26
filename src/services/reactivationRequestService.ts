@@ -2,6 +2,7 @@ import { getDatabase } from '../db/database.js';
 import { generateId } from '../utils/crypto.js';
 import { normalizeMobileNumber } from '../utils/validation.js';
 import { AdminService } from './adminService.js';
+import { TelegramService } from './telegramService.js';
 import type { ReactivationRequestRecord, User } from '../types/index.js';
 
 export class ReactivationRequestService {
@@ -79,6 +80,18 @@ export class ReactivationRequestService {
     );
 
     const createdRecord = db.prepare('SELECT * FROM reactivation_requests WHERE id = ?').get(id) as ReactivationRequestRecord;
+
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyReactivationRequest({
+      requestId: id,
+      mobileNumber: normalizedMobile,
+      fullName: user.full_name || null,
+      reason: userReason,
+      lockType: user.lock_type,
+      failedAttempts: user.failed_login_attempts,
+      createdAt: nowIso
+    }).catch(err => console.warn('[ReactivationRequestService] Telegram notification notice:', err?.message));
+
     return { request: createdRecord };
   }
 
@@ -240,6 +253,16 @@ export class ReactivationRequestService {
       ipAddress: params.ipAddress
     });
 
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyAdminDecision({
+      type: 'REACTIVATION',
+      decision: 'APPROVED',
+      requestId: request.id,
+      targetMobileNumber: request.mobile_number,
+      adminNotes: adminNotes,
+      timestamp: nowIso
+    }).catch(err => console.warn('[ReactivationRequestService] Telegram decision notice:', err?.message));
+
     const updatedRequest = db.prepare('SELECT * FROM reactivation_requests WHERE id = ?').get(request.id) as ReactivationRequestRecord;
     return { success: true, request: updatedRequest };
   }
@@ -297,6 +320,16 @@ export class ReactivationRequestService {
       },
       ipAddress: params.ipAddress
     });
+
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyAdminDecision({
+      type: 'REACTIVATION',
+      decision: 'REJECTED',
+      requestId: request.id,
+      targetMobileNumber: request.mobile_number,
+      adminNotes: rejectionReason,
+      timestamp: nowIso
+    }).catch(err => console.warn('[ReactivationRequestService] Telegram rejection notice:', err?.message));
 
     const updatedRequest = db.prepare('SELECT * FROM reactivation_requests WHERE id = ?').get(request.id) as ReactivationRequestRecord;
     return { success: true, request: updatedRequest };

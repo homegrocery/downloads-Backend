@@ -16,6 +16,7 @@ import {
 import { normalizeMobileNumber, validatePin } from '../utils/validation.js';
 import type { User, SafeUser, RecoveryRequestRecord, AdminAuditLogRecord, LoginAttemptRecord } from '../types/index.js';
 import { getAdminFirestore } from './firebaseAdmin.js';
+import { TelegramService } from './telegramService.js';
 
 export class AdminService {
   /**
@@ -765,6 +766,16 @@ export class AdminService {
       ipAddress: params.ipAddress
     });
 
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyAdminDecision({
+      type: 'RECOVERY',
+      decision: 'APPROVED',
+      requestId: reqRecord.id,
+      targetMobileNumber: reqRecord.mobile_number,
+      adminNotes: `Verified via ${params.verificationMethod.trim()}`,
+      timestamp: nowIso
+    }).catch(err => console.warn('[AdminService] Telegram approval notice:', err?.message));
+
     return {
       success: true,
       temporaryCode: tempCode,
@@ -821,6 +832,16 @@ export class AdminService {
       },
       ipAddress: params.ipAddress
     });
+
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyAdminDecision({
+      type: 'RECOVERY',
+      decision: 'REJECTED',
+      requestId: reqRecord.id,
+      targetMobileNumber: reqRecord.mobile_number,
+      adminNotes: params.reason?.trim() || null,
+      timestamp: nowIso
+    }).catch(err => console.warn('[AdminService] Telegram rejection notice:', err?.message));
 
     return true;
   }
@@ -902,6 +923,13 @@ export class AdminService {
       },
       ipAddress: params.ipAddress
     });
+
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyRecoveryRequestCancelled({
+      requestId: reqRecord.id,
+      targetMobileNumber: reqRecord.mobile_number,
+      cancelledBy: 'ADMIN'
+    }).catch(err => console.warn('[AdminService] Telegram delete notice:', err?.message));
 
     return {
       success: true,
@@ -1602,6 +1630,16 @@ export class AdminService {
       ipAddress: params.ipAddress
     });
 
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyAdministrativeAccountAction({
+      action: 'LOCKED',
+      targetMobileNumber: user.mobile_number,
+      targetFullName: user.full_name || null,
+      adminUserId: params.adminUserId,
+      reason,
+      timestamp: nowIso
+    }).catch(err => console.warn('[AdminService] Telegram manual lock notice:', err?.message));
+
     return {
       success: true,
       is_locked: true,
@@ -1649,6 +1687,16 @@ export class AdminService {
       },
       ipAddress: params.ipAddress
     });
+
+    // Notify Telegram Admin asynchronously
+    void TelegramService.notifyAdministrativeAccountAction({
+      action: 'ACTIVATED',
+      targetMobileNumber: user.mobile_number,
+      targetFullName: user.full_name || null,
+      adminUserId: params.adminUserId,
+      reason: params.reason || 'Administrative account activation',
+      timestamp: nowIso
+    }).catch(err => console.warn('[AdminService] Telegram manual activate notice:', err?.message));
 
     return {
       success: true,

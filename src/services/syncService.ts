@@ -1,6 +1,7 @@
 import { getDatabase } from '../db/database.js';
 import { ListService } from './listService.js';
 import { awaitPendingPostgresWrites } from '../db/postgresSync.js';
+import { TelegramService } from './telegramService.js';
 import type { PopulatedShoppingList } from './listService.js';
 import type { ShoppingList } from '../types/index.js';
 
@@ -183,6 +184,13 @@ export class SyncService {
       await awaitPendingPostgresWrites(5000);
     } catch (pgErr: any) {
       console.warn('[SyncService] Notice during PostgreSQL write confirmation:', pgErr?.message);
+      void TelegramService.notifyCriticalError({
+        errorType: 'POSTGRESQL_SYNC_TIMEOUT',
+        message: pgErr?.message || 'Timeout awaiting pending PostgreSQL writes',
+        endpoint: '/api/sync',
+        method: 'POST',
+        userId
+      }).catch(() => {});
     }
 
     // Return the fresh server state for the user
