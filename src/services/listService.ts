@@ -2,6 +2,7 @@ import { getDatabase } from '../db/database.js';
 import { generateId } from '../utils/crypto.js';
 import { calculateLineTotal, calculateListTotals } from '../utils/calculator.js';
 import { validateMonthYear } from '../utils/validation.js';
+import { SecurityService } from './securityService.js';
 import type { ShoppingList, ShoppingItem } from '../types/index.js';
 
 export interface PopulatedShoppingList extends ShoppingList {
@@ -26,7 +27,20 @@ export class ListService {
       WHERE id = ? AND user_id = ?
     `).get(listId, userId) as ShoppingList | undefined;
 
-    if (!list) return null;
+    if (!list) {
+      const otherList = db.prepare('SELECT user_id FROM shopping_lists WHERE id = ?').get(listId) as { user_id: string } | undefined;
+      if (otherList && otherList.user_id !== userId) {
+        SecurityService.recordSecurityEvent({
+          type: 'CROSS_USER_ACCESS_ATTEMPT',
+          severity: 'LEVEL_2_ELEVATED',
+          actionTaken: 'REJECT',
+          userId,
+          reasonCode: 'UNAUTHORIZED_ACTION',
+          details: { entityType: 'list', entityId: listId, targetOwnerId: otherList.user_id }
+        });
+      }
+      return null;
+    }
 
     const items = db.prepare(`
       SELECT * FROM shopping_items
@@ -107,6 +121,22 @@ export class ListService {
     const list = db.prepare('SELECT * FROM shopping_lists WHERE id = ? AND user_id = ?').get(listId, userId) as ShoppingList | undefined;
 
     if (!list) {
+      const otherList = db.prepare('SELECT user_id FROM shopping_lists WHERE id = ?').get(listId) as { user_id: string } | undefined;
+      if (otherList && otherList.user_id !== userId) {
+        SecurityService.recordSecurityEvent({
+          type: 'CROSS_USER_ACCESS_ATTEMPT',
+          severity: 'LEVEL_2_ELEVATED',
+          actionTaken: 'REJECT',
+          userId,
+          reasonCode: 'UNAUTHORIZED_ACTION',
+          details: { entityType: 'list', entityId: listId, targetOwnerId: otherList.user_id }
+        });
+        const err: any = new Error('LIST_NOT_FOUND: UNAUTHORIZED_ACTION: You do not have permission to modify this list.');
+        err.status = 403;
+        err.code = 'UNAUTHORIZED_ACTION';
+        err.errorMr = 'अनधिकृत कृती. आपल्याला या नोंदीमध्ये प्रवेश करण्याची परवानगी नाही.';
+        throw err;
+      }
       throw new Error('LIST_NOT_FOUND: Grocery list not found or unauthorized');
     }
 
@@ -136,6 +166,18 @@ export class ListService {
 
   static deleteList(userId: string, listId: string): boolean {
     const db = getDatabase();
+    const otherList = db.prepare('SELECT user_id FROM shopping_lists WHERE id = ?').get(listId) as { user_id: string } | undefined;
+    if (otherList && otherList.user_id !== userId) {
+      SecurityService.recordSecurityEvent({
+        type: 'CROSS_USER_ACCESS_ATTEMPT',
+        severity: 'LEVEL_2_ELEVATED',
+        actionTaken: 'REJECT',
+        userId,
+        reasonCode: 'UNAUTHORIZED_ACTION',
+        details: { entityType: 'list', entityId: listId, targetOwnerId: otherList.user_id }
+      });
+      return false;
+    }
     const result = db.prepare('DELETE FROM shopping_lists WHERE id = ? AND user_id = ?').run(listId, userId);
     return result.changes > 0;
   }
@@ -223,6 +265,22 @@ export class ListService {
     // Verify list ownership
     const list = db.prepare('SELECT id FROM shopping_lists WHERE id = ? AND user_id = ?').get(listId, userId);
     if (!list) {
+      const otherList = db.prepare('SELECT user_id FROM shopping_lists WHERE id = ?').get(listId) as { user_id: string } | undefined;
+      if (otherList && otherList.user_id !== userId) {
+        SecurityService.recordSecurityEvent({
+          type: 'CROSS_USER_ACCESS_ATTEMPT',
+          severity: 'LEVEL_2_ELEVATED',
+          actionTaken: 'REJECT',
+          userId,
+          reasonCode: 'UNAUTHORIZED_ACTION',
+          details: { entityType: 'list', entityId: listId, targetOwnerId: otherList.user_id }
+        });
+        const err: any = new Error('LIST_NOT_FOUND: UNAUTHORIZED_ACTION: You do not have permission to modify this list.');
+        err.status = 403;
+        err.code = 'UNAUTHORIZED_ACTION';
+        err.errorMr = 'अनधिकृत कृती. आपल्याला या नोंदीमध्ये प्रवेश करण्याची परवानगी नाही.';
+        throw err;
+      }
       throw new Error('LIST_NOT_FOUND: Shopping list not found or unauthorized');
     }
 
@@ -320,6 +378,22 @@ export class ListService {
     const item = db.prepare('SELECT * FROM shopping_items WHERE id = ? AND user_id = ?').get(itemId, userId) as ShoppingItem | undefined;
 
     if (!item) {
+      const otherItem = db.prepare('SELECT user_id FROM shopping_items WHERE id = ?').get(itemId) as { user_id: string } | undefined;
+      if (otherItem && otherItem.user_id !== userId) {
+        SecurityService.recordSecurityEvent({
+          type: 'CROSS_USER_ACCESS_ATTEMPT',
+          severity: 'LEVEL_2_ELEVATED',
+          actionTaken: 'REJECT',
+          userId,
+          reasonCode: 'UNAUTHORIZED_ACTION',
+          details: { entityType: 'item', entityId: itemId, targetOwnerId: otherItem.user_id }
+        });
+        const err: any = new Error('ITEM_NOT_FOUND: UNAUTHORIZED_ACTION: You do not have permission to modify this item.');
+        err.status = 403;
+        err.code = 'UNAUTHORIZED_ACTION';
+        err.errorMr = 'अनधिकृत कृती. आपल्याला या नोंदीमध्ये प्रवेश करण्याची परवानगी नाही.';
+        throw err;
+      }
       throw new Error('ITEM_NOT_FOUND: Grocery item not found or unauthorized');
     }
 
@@ -378,6 +452,19 @@ export class ListService {
 
   static deleteItem(userId: string, itemId: string): boolean {
     const db = getDatabase();
+    const otherItem = db.prepare('SELECT user_id FROM shopping_items WHERE id = ?').get(itemId) as { user_id: string } | undefined;
+    if (otherItem && otherItem.user_id !== userId) {
+      SecurityService.recordSecurityEvent({
+        type: 'CROSS_USER_ACCESS_ATTEMPT',
+        severity: 'LEVEL_2_ELEVATED',
+        actionTaken: 'REJECT',
+        userId,
+        reasonCode: 'UNAUTHORIZED_ACTION',
+        details: { entityType: 'item', entityId: itemId, targetOwnerId: otherItem.user_id }
+      });
+      return false;
+    }
+
     const item = db.prepare('SELECT list_id FROM shopping_items WHERE id = ? AND user_id = ?').get(itemId, userId) as { list_id: string } | undefined;
     if (!item) return false;
 

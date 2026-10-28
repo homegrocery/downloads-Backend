@@ -323,4 +323,133 @@ describe('Login Attempts, Account Locking & Reactivation Workflow (Build 6)', ()
       .send({ mobileNumber: '9822665544', pin: '123456' });
     expect(loginRes.status).toBe(423);
   });
+
+  it('pending reactivation request blocks direct unlock and is reported in getAccounts', async () => {
+    const reg = AuthService.register({
+      mobileNumber: '9822334455',
+      pin: '123456',
+      fullName: 'Pending Block User',
+      preferredLanguage: 'mr',
+      pinLength: 6
+    });
+    const userId = reg.user.id;
+
+    // Lock account via 5 failed attempts
+    for (let i = 0; i < 5; i++) {
+      await request(app).post('/api/auth/login').send({ mobileNumber: '9822334455', pin: '000000' });
+    }
+
+    // 1. Submit reactivation request
+    const reqRes = await request(app)
+      .post('/api/reactivation-requests')
+      .send({ mobileNumber: '9822334455', reason: 'Please reactivate my account' });
+    expect(reqRes.status).toBe(201);
+    const requestId = reqRes.body.data.request.id;
+
+    // 2. getAccounts reports has_pending_reactivation_request = true
+    const accountsData = AdminService.getAccounts({});
+    const targetAcc = accountsData.accounts.find(a => a.id === userId);
+    expect(targetAcc).toBeDefined();
+    expect(targetAcc?.is_locked).toBe(true);
+    expect(targetAcc?.has_pending_reactivation_request).toBe(true);
+    expect(targetAcc?.pending_reactivation_request_id).toBe(requestId);
+    expect(targetAcc?.pending_reactivation_status).toBe('PENDING');
+
+    // 3. Direct unlock via AdminService.activateAccount throws PENDING_REACTIVATION_EXISTS
+    expect(() => {
+      AdminService.activateAccount({
+        adminUserId: 'mock-admin',
+        targetAccountId: userId,
+        reason: 'Attempted direct unlock'
+      });
+    }).toThrowError(/PENDING_REACTIVATION_EXISTS/);
+
+    // 4. Direct unlock via POST /api/admin/accounts/:id/activate returns HTTP 409
+    const adminLogin = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ mobileNumber: '9356755100', pin: '112233' });
+    const adminToken = adminLogin.body.data.token;
+
+    const directUnlockRes = await request(app)
+      .post(`/api/admin/accounts/${userId}/activate`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ reason: 'Bypass attempt' });
+
+    expect(directUnlockRes.status).toBe(409);
+    expect(directUnlockRes.body.success).toBe(false);
+    expect(directUnlockRes.body.code).toBe('PENDING_REACTIVATION_EXISTS');
+
+    // 5. Account without a pending request can still be unlocked via activateAccount
+    const unblockedReg = AuthService.register({
+      mobileNumber: '9822119988',
+      pin: '123456',
+      fullName: 'Manual Unlock User',
+      pinLength: 6
+    });
+    // Manually lock
+    AdminService.lockAccount({
+      adminUserId: 'mock-admin',
+      targetAccountId: unblockedReg.user.id,
+      reason: 'Manual lock for testing'
+    });
+
+    const unblockedAccounts = AdminService.getAccounts({});
+    const unblockedAcc = unblockedAccounts.accounts.find(a => a.id === unblockedReg.user.id);
+    expect(unblockedAcc?.is_locked).toBe(true);
+    expect(unblockedAcc?.has_pending_reactivation_request).toBe(false);
+
+    // Manual unlock succeeds
+    const manualUnlockResult = AdminService.activateAccount({
+      adminUserId: 'mock-admin',
+      targetAccountId: unblockedReg.user.id,
+      reason: 'Manual unlock permitted'
+    });
+    expect(manualUnlockResult.success).toBe(true);
+    expect(manualUnlockResult.is_locked).toBe(false);
+  });
+
+  it('prevents double approval and double rejection with REQUEST_ALREADY_PROCESSED', async () => {
+    const reg = AuthService.register({
+      mobileNumber: '9822556677',
+      pin: '123456',
+      fullName: 'Double Process User',
+      pinLength: 6
+    });
+
+    for (let i = 0; i < 5; i++) {
+      await request(app).post('/api/auth/login').send({ mobileNumber: '9822556677', pin: '000000' });
+    }
+
+    const reqRes = await request(app)
+      .post('/api/reactivation-requests')
+      .send({ mobileNumber: '9822556677', reason: 'Reactivation request' });
+    const requestId = reqRes.body.data.request.id;
+
+    const adminLogin = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ mobileNumber: '9356755100', pin: '112233' });
+    const adminToken = adminLogin.body.data.token;
+
+    // First approval succeeds
+    const app1 = await request(app)
+      .post(`/api/admin/reactivation-requests/${requestId}/approve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ notes: 'First approval' });
+    expect(app1.status).toBe(200);
+    expect(app1.body.data.request.status).toBe('APPROVED');
+
+    // Second approval fails with 409
+    const app2 = await request(app)
+      .post(`/api/admin/reactivation-requests/${requestId}/approve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ notes: 'Second approval attempt' });
+    expect(app2.status).toBe(409);
+    expect(app2.body.code).toBe('REQUEST_ALREADY_PROCESSED');
+
+    // getAccounts now reflects that request is no longer pending and account is unlocked
+    const accountsData = AdminService.getAccounts({});
+    const acc = accountsData.accounts.find(a => a.id === reg.user.id);
+    expect(acc?.is_locked).toBe(false);
+    expect(acc?.has_pending_reactivation_request).toBe(false);
+  });
 });

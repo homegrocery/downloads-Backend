@@ -4,13 +4,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createApp } from '../app.js';
 import { initDatabase, closeDatabase } from '../db/database.js';
+import { setManifestFileForTests } from '../routes/updates.js';
 
 describe('APK Update Management API', () => {
   const app = createApp();
-  const manifestFile = path.resolve(process.cwd(), 'data', 'update-manifest.json');
+  const manifestFile = path.resolve(process.cwd(), 'data', 'test-updates-manifest.json');
 
   beforeEach(() => {
     initDatabase(':memory:');
+    setManifestFileForTests(manifestFile);
     if (fs.existsSync(manifestFile)) fs.unlinkSync(manifestFile);
   });
 

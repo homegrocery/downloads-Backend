@@ -20,6 +20,7 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     error: errorMessage,
     code: err?.code,
     errorMr: err?.errorMr,
+    nextAction: err?.nextAction,
     retryAfter: err?.retryAfter,
     failedAttempts: err?.failedAttempts,
     maxAttempts: err?.maxAttempts,

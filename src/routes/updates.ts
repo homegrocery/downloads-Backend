@@ -11,7 +11,11 @@ const __dirname = path.dirname(__filename);
 export const updatesRouter = Router();
 
 const RELEASE_DIR = path.resolve(process.cwd(), '..', 'release');
-const MANIFEST_FILE = path.resolve(process.cwd(), 'data', 'update-manifest.json');
+let MANIFEST_FILE = path.resolve(process.cwd(), 'data', 'update-manifest.json');
+
+export function setManifestFileForTests(file: string) {
+  MANIFEST_FILE = file;
+}
 
 export interface UpdateManifest {
   hasUpdate: boolean;

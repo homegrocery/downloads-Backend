@@ -4,6 +4,7 @@ import { AuthService } from '../services/authService.js';
 import { RecoveryRequestService } from '../services/recoveryRequestService.js';
 import { ReactivationRequestService } from '../services/reactivationRequestService.js';
 import { AdminService } from '../services/adminService.js';
+import { WebsiteReleaseService } from '../services/websiteReleaseService.js';
 import { getDatabase } from '../db/database.js';
 
 describe('Telegram Admin Notifications Suite', () => {
@@ -618,4 +619,364 @@ describe('Telegram Admin Notifications Suite', () => {
       expect(callCount).toBe(1);
     });
   });
+  describe('7. Build 9 Phase 4: Local Animation, File ID Caching & Deep Linking', () => {
+    it('resolves local animation asset when TELEGRAM_ENABLE_LOCAL_ANIMATION is true', () => {
+      process.env.TELEGRAM_ENABLE_LOCAL_ANIMATION = 'true';
+      const animSource = TelegramService.getAnimationSource();
+      expect(animSource).toBeTruthy();
+      expect(animSource).toMatch(/alert_animation\.(mp4|gif)$/);
+      delete process.env.TELEGRAM_ENABLE_LOCAL_ANIMATION;
+    });
+
+    it('resolves custom local path when TELEGRAM_ALERT_ANIMATION_PATH is specified', () => {
+      process.env.TELEGRAM_ALERT_ANIMATION_PATH = 'src/assets/telegram/alert_animation.mp4';
+      const animSource = TelegramService.getAnimationSource();
+      expect(animSource).toBeTruthy();
+      expect(animSource).toContain('alert_animation.mp4');
+      delete process.env.TELEGRAM_ALERT_ANIMATION_PATH;
+    });
+
+    it('dispatches multipart form upload for local file and caches returned file_id', async () => {
+      process.env.TELEGRAM_ENABLE_LOCAL_ANIMATION = 'true';
+      let sentFormData = null;
+      let targetUrl = '';
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+        targetUrl = url.toString();
+        sentFormData = init?.body;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ok: true,
+            result: {
+              message_id: 888,
+              animation: { file_id: 'cached_telegram_file_id_xyz' }
+            }
+          })
+        };
+      });
+
+      const res = await TelegramService.sendNotification({
+        htmlMessage: '<b>Multipart Alert</b>',
+        routePath: '#/website-control'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(res.method).toBe('ANIMATION');
+      expect(targetUrl).toBe(`https://api.telegram.org/bot${mockToken}/sendAnimation`);
+      expect(sentFormData).toBeInstanceOf(FormData);
+      expect(sentFormData.get('chat_id')).toBe(mockChatId);
+      expect(sentFormData.get('caption')).toContain('Multipart Alert');
+
+      // Verify file_id caching:
+      expect(TelegramService.getCachedAnimationFileId()).toBe('cached_telegram_file_id_xyz');
+      expect(TelegramService.getAnimationSource()).toBe('cached_telegram_file_id_xyz');
+
+      // Subsequent call should use cached file_id as JSON payload instead of re-uploading file
+      let secondPayload = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        secondPayload = JSON.parse(init?.body);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ ok: true, result: { message_id: 889 } })
+        };
+      });
+
+      const secondRes = await TelegramService.sendNotification({
+        htmlMessage: '<b>Cached File ID Alert</b>'
+      });
+
+      expect(secondRes.sent).toBe(true);
+      expect(secondPayload.animation).toBe('cached_telegram_file_id_xyz');
+
+      delete process.env.TELEGRAM_ENABLE_LOCAL_ANIMATION;
+    });
+
+    it('truncates captions longer than 1024 characters and cleanly closes unbalanced tags', () => {
+      const longText = '<b>HOME GROCERY ALERT: <i>' + 'X'.repeat(1200) + '</i></b>';
+      const truncated = TelegramService.truncateHtml(longText, 1024);
+
+      expect(truncated.length).toBeLessThanOrEqual(1024);
+      expect(truncated).toContain('...');
+      expect(truncated.endsWith('</i></b>')).toBe(true);
+    });
+
+    it('builds Admin ERP deep link URLs for each dedicated management section', () => {
+      const accountsBtn = TelegramService.buildAdminErpKeyboard('Accounts', '#/accounts');
+      expect(accountsBtn.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/accounts');
+
+      const recoveryBtn = TelegramService.buildAdminErpKeyboard('Recovery', '#/recovery');
+      expect(recoveryBtn.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/recovery');
+
+      const webControlBtn = TelegramService.buildAdminErpKeyboard('Website', '#/website-control');
+      expect(webControlBtn.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+
+      const auditBtn = TelegramService.buildAdminErpKeyboard('Audit Logs', '#/audit-logs');
+      expect(auditBtn.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/audit-logs');
+
+      const diagBtn = TelegramService.buildAdminErpKeyboard('Diagnostics', '#/diagnostics');
+      expect(diagBtn.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/diagnostics');
+    });
+  });
+
+  describe('8. Build 9 Phase 4: Expanded Lifecycle Event Coverage', () => {
+    it('dispatches notifyAccountDeleted with masked mobile, cascaded tables and accounts deep link', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyAccountDeleted({
+        adminUserId: 'admin-uuid-1',
+        targetMobileNumber: '9876543210',
+        targetFullName: 'Deleted User',
+        confirmationId: 'DEL-CONFIRM-123',
+        cascadedTables: { shopping_lists: 2, shopping_items: 7, authentication_sessions: 3 }
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('PERMANENT ACCOUNT DELETION');
+      expect(sentBody.text).toContain('MEMBER ACTIVITY');
+      expect(sentBody.text).toContain('+91 98*** **210');
+      expect(sentBody.text).toContain('DEL-CONFIRM-123');
+      expect(sentBody.text).toContain('shopping_lists (2)');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/accounts');
+    });
+
+    it('dispatches notifyWebsiteContentPublished with revision, title and website-control deep link', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyWebsiteContentPublished({
+        adminUserId: 'admin-uuid-1',
+        revision: 4,
+        title: 'Home Grocery Live',
+        sectionsCount: 12
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('PUBLIC WEBSITE CONTENT PUBLISHED');
+      expect(sentBody.text).toContain('WEBSITE CONTROL');
+      expect(sentBody.text).toContain('Revision 4');
+      expect(sentBody.text).toContain('Home Grocery Live');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+    });
+
+    it('dispatches notifyAnnouncementPublished with bilingual title and website-control deep link', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyAnnouncementPublished({
+        adminUserId: 'admin-uuid-1',
+        announcementId: 'ann-uuid-777',
+        title: 'Scheduled Cloud Maintenance',
+        titleMr: 'नियोजित देखभाल',
+        category: 'MAINTENANCE'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('PUBLIC ANNOUNCEMENT PUBLISHED');
+      expect(sentBody.text).toContain('Scheduled Cloud Maintenance');
+      expect(sentBody.text).toContain('नियोजित देखभाल');
+      expect(sentBody.text).toContain('MAINTENANCE');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+    });
+
+    it('dispatches notifyAnnouncementArchived when announcement is removed from active feed', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyAnnouncementArchived({
+        adminUserId: 'admin-uuid-1',
+        announcementId: 'ann-uuid-777',
+        title: 'Archived Notice'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('PUBLIC ANNOUNCEMENT ARCHIVED');
+      expect(sentBody.text).toContain('Archived Notice');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+    });
+
+    it('dispatches notifyReleaseCreated for Android release draft', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyReleaseCreated({
+        adminUserId: 'admin-uuid-1',
+        releaseId: 'rel-uuid-101',
+        versionName: '1.0.3',
+        versionCode: 17,
+        channel: 'STABLE'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('NEW ANDROID RELEASE DRAFT CREATED');
+      expect(sentBody.text).toContain('RELEASE & SYSTEM');
+      expect(sentBody.text).toContain('1.0.3 (v17)');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+    });
+
+    it('dispatches notifyReleaseBuildStatus with build progress details', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyReleaseBuildStatus({
+        adminUserId: 'admin-uuid-1',
+        releaseId: 'rel-uuid-101',
+        versionName: '1.0.3',
+        versionCode: 17,
+        status: 'BUILDING',
+        notes: 'Gradle assembleRelease running in background'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('ANDROID BUILD WORKFLOW UPDATE');
+      expect(sentBody.text).toContain('BUILDING');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+    });
+
+    it('dispatches notifyReleasePublished when production manifest is updated', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyReleasePublished({
+        adminUserId: 'admin-uuid-1',
+        releaseId: 'rel-uuid-101',
+        versionName: '1.0.3',
+        versionCode: 17,
+        channel: 'STABLE',
+        apkDownloadUrl: 'https://homegrocery.github.io/download-app/HomeGrocery-v1.0.3.apk'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('ANDROID RELEASE PUBLISHED TO PRODUCTION');
+      expect(sentBody.text).toContain('1.0.3 (v17)');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+    });
+
+    it('dispatches notifyReleaseRollback when emergency rollback is executed', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifyReleaseRollback({
+        adminUserId: 'admin-uuid-1',
+        rolledBackReleaseId: 'rel-uuid-bad',
+        targetReleaseId: 'rel-uuid-stable',
+        reason: 'Hotfix rollback to stable release'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('EMERGENCY RELEASE ROLLBACK EXECUTED');
+      expect(sentBody.text).toContain('rel-uuid-bad');
+      expect(sentBody.text).toContain('rel-uuid-stable');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/website-control');
+    });
+
+    it('dispatches notifySyncCriticalFailure with error count and diagnostics deep link', async () => {
+      let sentBody = null;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        sentBody = JSON.parse(init?.body);
+        return { ok: true, status: 200, json: async () => ({ ok: true, result: {} }) };
+      });
+
+      const res = await TelegramService.notifySyncCriticalFailure({
+        userId: 'user-uuid-sync-test',
+        errorCount: 5,
+        lastError: 'Database lock acquisition failed',
+        endpoint: '/api/sync'
+      });
+
+      expect(res.sent).toBe(true);
+      expect(sentBody.text).toContain('CRITICAL CLIENT SYNC FAILURE ALERT');
+      expect(sentBody.text).toContain('CRITICAL SYSTEM ALERT');
+      expect(sentBody.text).toContain('Consecutive Errors');
+      expect(sentBody.reply_markup.inline_keyboard[0][0].url).toBe('https://homegrocery.github.io/admin-ERP/#/diagnostics');
+    });
+  });
+
+  describe('9. Build 9 Phase 4: Core Services Lifecycle Hooks Integration', () => {
+    it('AdminService.deleteAccount invokes TelegramService.notifyAccountDeleted', async () => {
+      const delMobile = '98' + Math.floor(10000000 + Math.random() * 90000000).toString();
+      const targetUser = AuthService.register({
+        mobileNumber: delMobile,
+        pin: '123456',
+        fullName: 'To Be Deleted',
+        preferredLanguage: 'en',
+        pinLength: 6
+      });
+
+      const deleteSpy = vi.spyOn(TelegramService, 'notifyAccountDeleted');
+
+      const result = await AdminService.deleteAccount({
+        adminUserId: 'admin-test-id',
+        targetAccountId: targetUser.user.id,
+        confirmMobileNumber: delMobile,
+        confirmationPhrase: 'DELETE'
+      });
+
+      expect(result.success).toBe(true);
+      expect(deleteSpy).toHaveBeenCalledWith(expect.objectContaining({
+        adminUserId: 'admin-test-id',
+        targetMobileNumber: delMobile,
+        targetFullName: 'To Be Deleted'
+      }));
+    });
+
+    it('WebsiteReleaseService.publishWebsiteContent invokes TelegramService.notifyWebsiteContentPublished', async () => {
+      const pubSpy = vi.spyOn(TelegramService, 'notifyWebsiteContentPublished');
+
+      WebsiteReleaseService.publishWebsiteContent('admin-test-id');
+
+      expect(pubSpy).toHaveBeenCalledWith(expect.objectContaining({
+        adminUserId: 'admin-test-id',
+        revision: expect.any(Number),
+        title: expect.any(String)
+      }));
+    });
+
+    it('WebsiteReleaseService.createAnnouncement with status PUBLISHED invokes notifyAnnouncementPublished', async () => {
+      const annSpy = vi.spyOn(TelegramService, 'notifyAnnouncementPublished');
+
+      WebsiteReleaseService.createAnnouncement('admin-test-id', {
+        title: 'Telegram Live Notice',
+        titleMr: 'टेलिग्राम थेट सूचना',
+        content: 'System fully verified with automated alerts.',
+        contentMr: 'स्वयंचलित सूचनांसह प्रणाली पूर्णपणे सत्यापित.',
+        category: 'FEATURE',
+        status: 'PUBLISHED'
+      });
+
+      expect(annSpy).toHaveBeenCalledWith(expect.objectContaining({
+        adminUserId: 'admin-test-id',
+        title: 'Telegram Live Notice',
+        category: 'FEATURE'
+      }));
+    });
+  });
+
 });

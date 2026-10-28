@@ -10,6 +10,8 @@ import { updatesRouter } from './routes/updates.js';
 import { adminRouter } from './routes/admin.js';
 import { recoveryRequestsRouter } from './routes/recoveryRequests.js';
 import { reactivationRequestRouter } from './routes/reactivationRequests.js';
+import { publicWebsiteRouter } from './routes/publicWebsite.js';
+import { adminWebsiteRouter } from './routes/adminWebsite.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 export function createApp() {
@@ -45,7 +47,8 @@ export function createApp() {
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Version', 'X-Recovery-Request-Id', 'X-Recovery-Token', 'X-Request-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Client-Version', 'X-Recovery-Request-Id', 'X-Recovery-Token', 'X-Request-Id', 'If-None-Match'],
+    exposedHeaders: ['ETag'],
     credentials: true,
     optionsSuccessStatus: 204
   };
@@ -79,8 +82,10 @@ export function createApp() {
 
   // Routes
   app.use('/api', healthRouter);
+  app.use('/api/public', publicWebsiteRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/admin/website-control', adminWebsiteRouter);
   app.use('/api/recovery-requests', recoveryRequestsRouter);
   app.use('/api/reactivation-requests', reactivationRequestRouter);
   app.use('/api/lists', listsRouter);

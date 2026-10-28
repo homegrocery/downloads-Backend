@@ -284,4 +284,107 @@ describe('Admin ERP Authentication & Isolation', () => {
     expect(auditRows.length).toBe(1);
     expect(auditRows[0].target_mobile_number).toBe('9356755100');
   });
+
+  it('Build 9 Phase 1.5: GET /api/admin/system/freshness returns change markers and 304 on matching ETag', async () => {
+    // 1. Unauthenticated request rejected
+    const unauthRes = await request(app).get('/api/admin/system/freshness');
+    expect(unauthRes.status).toBe(401);
+
+    // 2. Admin logs in
+    const adminReg = AuthService.register({
+      mobileNumber: '9356755100',
+      pin: '654321',
+      fullName: 'Santosh Koli Owner',
+      preferredLanguage: 'mr',
+      pinLength: 6
+    });
+    const db = getDatabase();
+    db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(adminReg.user.id);
+
+    const loginRes = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ mobileNumber: '9356755100', pin: '654321' });
+    const token = loginRes.body.data.token;
+
+    // 3. Authenticated freshness call
+    const freshRes1 = await request(app)
+      .get('/api/admin/system/freshness')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(freshRes1.status).toBe(200);
+    expect(freshRes1.body.success).toBe(true);
+    expect(freshRes1.body.data.etag).toBeDefined();
+    expect(freshRes1.body.data.markers).toBeDefined();
+    expect(freshRes1.body.data.markers.accounts).toBeDefined();
+    expect(freshRes1.body.data.summary.totalAccounts).toBeGreaterThan(0);
+
+    const etag1 = freshRes1.body.data.etag;
+
+    // 4. Client polls with If-None-Match: returns 304 Not Modified
+    const notModRes = await request(app)
+      .get('/api/admin/system/freshness')
+      .set('Authorization', `Bearer ${token}`)
+      .set('If-None-Match', `"${etag1}"`);
+
+    expect(notModRes.status).toBe(304);
+
+    // 5. Authoritative backend data changes (e.g. new user registered)
+    AuthService.register({
+      mobileNumber: '9899887766',
+      pin: '123456',
+      fullName: 'New Customer',
+      preferredLanguage: 'mr',
+      pinLength: 6
+    });
+
+    // 6. Polling with old ETag detects change: returns 200 with new ETag & markers
+    const freshRes2 = await request(app)
+      .get('/api/admin/system/freshness')
+      .set('Authorization', `Bearer ${token}`)
+      .set('If-None-Match', `"${etag1}"`);
+
+    expect(freshRes2.status).toBe(200);
+    const etag2 = freshRes2.body.data.etag;
+    expect(etag2).not.toBe(etag1);
+    expect(freshRes2.body.data.summary.totalAccounts).toBe(freshRes1.body.data.summary.totalAccounts + 1);
+  });
+
+  it('Build 9 Phase 2: allows Default Admin login with PIN only without sending mobile number', async () => {
+    // 1. Create owner admin account
+    const adminReg = AuthService.register({
+      mobileNumber: '9356755100',
+      pin: '654321',
+      fullName: 'Santosh Koli Owner',
+      preferredLanguage: 'mr',
+      pinLength: 6
+    });
+    const db = getDatabase();
+    db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(adminReg.user.id);
+
+    // 2. Login with PIN only (no mobileNumber in body)
+    const loginRes = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ pin: '654321' });
+
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.success).toBe(true);
+    expect(loginRes.body.data.token).toBeDefined();
+    expect(loginRes.body.data.admin.role).toBe('admin');
+    expect(loginRes.body.data.admin.id).toBe(adminReg.user.id);
+
+    // 3. Login with wrong PIN only fails
+    const wrongPinRes = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ pin: '000000' });
+
+    expect(wrongPinRes.status).toBe(401);
+    expect(wrongPinRes.body.success).toBe(false);
+
+    // 4. Missing PIN rejected
+    const missingPinRes = await request(app)
+      .post('/api/admin/auth/login')
+      .send({});
+
+    expect(missingPinRes.status).toBe(400);
+  });
 });

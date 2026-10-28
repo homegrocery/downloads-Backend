@@ -3,6 +3,7 @@ import { generateId } from '../utils/crypto.js';
 import { normalizeMobileNumber } from '../utils/validation.js';
 import { AdminService } from './adminService.js';
 import { TelegramService } from './telegramService.js';
+import { SecurityService } from './securityService.js';
 import type { ReactivationRequestRecord, User } from '../types/index.js';
 
 export class ReactivationRequestService {
@@ -207,37 +208,51 @@ export class ReactivationRequestService {
 
     if (request.status !== 'PENDING') {
       const err: any = new Error(`REQUEST_ALREADY_PROCESSED: Request is already ${request.status}`);
-      err.status = 400;
+      err.status = 409;
       err.code = 'REQUEST_ALREADY_PROCESSED';
       err.errorMr = `विनंती आधीच प्रक्रिया झाली आहे (${request.status})`;
       throw err;
     }
 
+    const user = db.prepare('SELECT * FROM users WHERE id = ? OR mobile_number = ?').get(request.user_id, request.mobile_number) as User | undefined;
     const nowIso = new Date().toISOString();
     const adminNotes = (params.notes || '').trim() || 'Approved by administrator';
 
     db.transaction(() => {
-      // 1. Mark request as APPROVED
-      db.prepare(`
+      // 1. Mark request as APPROVED (optimistic concurrency lock on PENDING status)
+      const updateReq = db.prepare(`
         UPDATE reactivation_requests
         SET status = 'APPROVED',
             admin_user_id = ?,
             admin_notes = ?,
             reviewed_at = ?,
             updated_at = ?
-        WHERE id = ?
+        WHERE id = ? AND status = 'PENDING'
       `).run(params.adminUserId, adminNotes, nowIso, nowIso, request.id);
 
+      if (updateReq.changes === 0) {
+        const current = db.prepare('SELECT status FROM reactivation_requests WHERE id = ?').get(request.id) as { status: string } | undefined;
+        const err: any = new Error(`REQUEST_ALREADY_PROCESSED: Request is already ${current?.status || 'PROCESSED'}`);
+        err.status = 409;
+        err.code = 'REQUEST_ALREADY_PROCESSED';
+        err.errorMr = `विनंती आधीच प्रक्रिया झाली आहे (${current?.status || 'PROCESSED'})`;
+        throw err;
+      }
+
       // 2. Unlock the user account and reset failures
-      db.prepare(`
-        UPDATE users
-        SET locked_until = NULL,
-            failed_login_attempts = 0,
-            lock_type = NULL,
-            lock_reason = NULL,
-            updated_at = ?
-        WHERE id = ?
-      `).run(nowIso, request.user_id);
+      if (user) {
+        db.prepare(`
+          UPDATE users
+          SET locked_until = NULL,
+              failed_login_attempts = 0,
+              lock_type = NULL,
+              lock_reason = NULL,
+              updated_at = ?
+          WHERE id = ?
+        `).run(nowIso, user.id);
+
+        SecurityService.clearRevokedTokensForUser(user.id);
+      }
     })();
 
     // 3. Log admin audit
@@ -259,6 +274,7 @@ export class ReactivationRequestService {
       decision: 'APPROVED',
       requestId: request.id,
       targetMobileNumber: request.mobile_number,
+      targetFullName: user?.full_name || null,
       adminNotes: adminNotes,
       timestamp: nowIso
     }).catch(err => console.warn('[ReactivationRequestService] Telegram decision notice:', err?.message));
@@ -289,24 +305,37 @@ export class ReactivationRequestService {
 
     if (request.status !== 'PENDING') {
       const err: any = new Error(`REQUEST_ALREADY_PROCESSED: Request is already ${request.status}`);
-      err.status = 400;
+      err.status = 409;
       err.code = 'REQUEST_ALREADY_PROCESSED';
       err.errorMr = `विनंती आधीच प्रक्रिया झाली आहे (${request.status})`;
       throw err;
     }
 
+    const user = db.prepare('SELECT * FROM users WHERE id = ? OR mobile_number = ?').get(request.user_id, request.mobile_number) as User | undefined;
     const rejectionReason = (params.reason || '').trim() || 'Rejected by administrator';
     const nowIso = new Date().toISOString();
 
-    db.prepare(`
-      UPDATE reactivation_requests
-      SET status = 'REJECTED',
-          admin_user_id = ?,
-          admin_notes = ?,
-          reviewed_at = ?,
-          updated_at = ?
-      WHERE id = ?
-    `).run(params.adminUserId, rejectionReason, nowIso, nowIso, request.id);
+    db.transaction(() => {
+      const updateReq = db.prepare(`
+        UPDATE reactivation_requests
+        SET status = 'REJECTED',
+            admin_user_id = ?,
+            admin_notes = ?,
+            reviewed_at = ?,
+            updated_at = ?
+        WHERE id = ? AND status = 'PENDING'
+      `).run(params.adminUserId, rejectionReason, nowIso, nowIso, request.id);
+
+      if (updateReq.changes === 0) {
+        const current = db.prepare('SELECT status FROM reactivation_requests WHERE id = ?').get(request.id) as { status: string } | undefined;
+        const err: any = new Error(`REQUEST_ALREADY_PROCESSED: Request is already ${current?.status || 'PROCESSED'}`);
+        err.status = 409;
+        err.code = 'REQUEST_ALREADY_PROCESSED';
+        err.errorMr = `विनंती आधीच प्रक्रिया झाली आहे (${current?.status || 'PROCESSED'})`;
+        throw err;
+      }
+      // Note: User account remains locked as per policy
+    })();
 
     // Log admin audit
     AdminService.logAudit({
@@ -327,6 +356,7 @@ export class ReactivationRequestService {
       decision: 'REJECTED',
       requestId: request.id,
       targetMobileNumber: request.mobile_number,
+      targetFullName: user?.full_name || null,
       adminNotes: rejectionReason,
       timestamp: nowIso
     }).catch(err => console.warn('[ReactivationRequestService] Telegram rejection notice:', err?.message));

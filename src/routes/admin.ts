@@ -668,4 +668,26 @@ adminRouter.post('/reactivation-requests/:id/reject', requireAdmin, (req: Authen
   }
 });
 
+// Universal Change-Detection / Freshness Endpoint (Build 9 Phase 1.5)
+adminRouter.get('/system/freshness', requireAdmin, (req: AuthenticatedRequest, res, next) => {
+  try {
+    const clientEtag = (req.headers['if-none-match'] || '').replace(/W\/|"|'/g, '').trim();
+    const freshness = AdminService.getFreshnessMarkers(req.user?.id);
+
+    res.setHeader('ETag', `"${freshness.etag}"`);
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+
+    if (clientEtag && clientEtag === freshness.etag) {
+      return res.status(304).end();
+    }
+
+    res.json({
+      success: true,
+      data: freshness
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 

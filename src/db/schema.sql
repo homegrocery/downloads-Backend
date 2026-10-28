@@ -214,3 +214,60 @@ CREATE INDEX IF NOT EXISTS idx_reactivation_req_user ON reactivation_requests(us
 CREATE INDEX IF NOT EXISTS idx_reactivation_req_status ON reactivation_requests(status);
 CREATE INDEX IF NOT EXISTS idx_reactivation_req_mobile ON reactivation_requests(mobile_number);
 
+CREATE TABLE IF NOT EXISTS public_website_content (
+    id TEXT PRIMARY KEY,
+    content_json TEXT NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL,
+    published_at TEXT,
+    published_by TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public_announcements (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    title_mr TEXT NOT NULL,
+    content TEXT NOT NULL,
+    content_mr TEXT NOT NULL,
+    category TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'DRAFT',
+    published_at TEXT,
+    expires_at TEXT,
+    safe_links_json TEXT,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    created_by TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_announcements_status ON public_announcements(status);
+CREATE INDEX IF NOT EXISTS idx_public_announcements_pub ON public_announcements(published_at);
+
+CREATE TABLE IF NOT EXISTS release_records (
+    id TEXT PRIMARY KEY,
+    version_name TEXT NOT NULL,
+    build_number INTEGER NOT NULL,
+    version_code INTEGER NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'STABLE',
+    status TEXT NOT NULL DEFAULT 'DRAFT',
+    release_notes TEXT NOT NULL,
+    release_notes_mr TEXT NOT NULL,
+    is_mandatory INTEGER NOT NULL DEFAULT 0,
+    min_supported_build INTEGER NOT NULL DEFAULT 1,
+    apk_filename TEXT,
+    apk_download_url TEXT,
+    apk_size_bytes INTEGER,
+    sha256_hash TEXT,
+    git_commit_hash TEXT,
+    git_branch TEXT DEFAULT 'main',
+    build_logs TEXT,
+    verified_at TEXT,
+    published_at TEXT,
+    rolled_back_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    initiated_by TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_release_records_code ON release_records(version_code);
+CREATE INDEX IF NOT EXISTS idx_release_records_status ON release_records(status);

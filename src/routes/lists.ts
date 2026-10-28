@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { ListService } from '../services/listService.js';
+import { SecurityService } from '../services/securityService.js';
 import { requireAuth, type AuthenticatedRequest } from '../middleware/auth.js';
+import { getDatabase } from '../db/database.js';
 
 export const listsRouter = Router();
 
@@ -17,6 +19,13 @@ listsRouter.get('/', (req: AuthenticatedRequest, res) => {
 
 listsRouter.post('/', (req: AuthenticatedRequest, res, next) => {
   try {
+    SecurityService.validatePayloadSecurity({
+      payload: req.body,
+      requestingUserId: req.user!.id,
+      requestingRole: req.user!.role,
+      ipAddress: req.ip,
+      endpoint: req.originalUrl || req.baseUrl
+    });
     const { title, monthYear, monthlyBudget, notes } = req.body;
     const list = ListService.createList(req.user!.id, {
       title,
@@ -54,6 +63,13 @@ listsRouter.get('/:id', (req: AuthenticatedRequest, res) => {
 
 listsRouter.put('/:id', (req: AuthenticatedRequest, res, next) => {
   try {
+    SecurityService.validatePayloadSecurity({
+      payload: req.body,
+      requestingUserId: req.user!.id,
+      requestingRole: req.user!.role,
+      ipAddress: req.ip,
+      endpoint: req.originalUrl || req.baseUrl
+    });
     const updated = ListService.updateList(req.user!.id, req.params.id, req.body);
     res.json({
       success: true,
@@ -69,6 +85,17 @@ listsRouter.put('/:id', (req: AuthenticatedRequest, res, next) => {
 listsRouter.delete('/:id', (req: AuthenticatedRequest, res) => {
   const deleted = ListService.deleteList(req.user!.id, req.params.id);
   if (!deleted) {
+    const db = getDatabase();
+    const otherList = db.prepare('SELECT user_id FROM shopping_lists WHERE id = ?').get(req.params.id) as { user_id: string } | undefined;
+    if (otherList && otherList.user_id !== req.user!.id) {
+      res.status(403).json({
+        success: false,
+        error: 'UNAUTHORIZED_ACTION: You do not have permission to delete this list.',
+        code: 'UNAUTHORIZED_ACTION',
+        errorMr: 'अनधिकृत कृती. आपल्याला या नोंदीमध्ये प्रवेश करण्याची परवानगी नाही.'
+      });
+      return;
+    }
     res.status(404).json({
       success: false,
       error: 'List not found or unauthorized',
@@ -85,6 +112,13 @@ listsRouter.delete('/:id', (req: AuthenticatedRequest, res) => {
 
 listsRouter.post('/:id/copy', (req: AuthenticatedRequest, res, next) => {
   try {
+    SecurityService.validatePayloadSecurity({
+      payload: req.body,
+      requestingUserId: req.user!.id,
+      requestingRole: req.user!.role,
+      ipAddress: req.ip,
+      endpoint: req.originalUrl || req.baseUrl
+    });
     const { targetMonthYear, newTitle } = req.body;
     const copied = ListService.copyListToMonth(req.user!.id, req.params.id, targetMonthYear, newTitle);
     res.status(201).json({
@@ -101,6 +135,13 @@ listsRouter.post('/:id/copy', (req: AuthenticatedRequest, res, next) => {
 // Items sub-routes under a list
 listsRouter.post('/:id/items', (req: AuthenticatedRequest, res, next) => {
   try {
+    SecurityService.validatePayloadSecurity({
+      payload: req.body,
+      requestingUserId: req.user!.id,
+      requestingRole: req.user!.role,
+      ipAddress: req.ip,
+      endpoint: req.originalUrl || req.baseUrl
+    });
     const { name, nameMr, quantity, unit, category, unitPrice, notes, allowDuplicate } = req.body;
     const item = ListService.addItem(req.user!.id, req.params.id, {
       name,

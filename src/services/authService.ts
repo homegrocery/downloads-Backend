@@ -14,8 +14,24 @@ import { normalizeMobileNumber, validatePin } from '../utils/validation.js';
 import { FirebaseAuthService } from './firebaseAuthService.js';
 import { AdminService } from './adminService.js';
 import { TelegramService } from './telegramService.js';
+import { SecurityService } from './securityService.js';
 import { config } from '../config.js';
 import type { User, SafeUser, RecoveryCodeRecord, RecoveryAuthorizationRecord, RecoveryRequestRecord } from '../types/index.js';
+
+export interface SessionVerificationResult {
+  status: 'VALID' | 'LOCKED' | 'REVOKED' | 'EXPIRED' | 'INVALID';
+  user?: SafeUser;
+  code?: string;
+  reasonCode?: string;
+  error?: string;
+  errorMr?: string;
+  lockType?: 'AUTOMATIC' | 'ADMINISTRATIVE' | null;
+  lockReason?: string | null;
+  failedAttempts?: number;
+  maxAttempts?: number;
+  remainingAttempts?: number;
+  nextAction?: 'REACTIVATION_REQUIRED' | 'LOGIN_REQUIRED' | null;
+}
 
 // Rate limiting & lockout tracking for unauthenticated / non-existent accounts
 // Prevents mobile number enumeration while ensuring all targets observe strict 4-attempt / 24-hr lockout
@@ -237,6 +253,7 @@ export class AuthService {
       );
       err.status = 423;
       err.code = 'ACCOUNT_LOCKED';
+      err.nextAction = 'REACTIVATION_REQUIRED';
       err.lockType = user.lock_type || (isAdministrative ? 'ADMINISTRATIVE' : 'AUTOMATIC');
       err.lockReason = lockReasonText;
       err.failedAttempts = user.failed_login_attempts || 5;
@@ -293,8 +310,8 @@ export class AuthService {
             WHERE id = ?
           `).run(lockIso, lockType, lockReason, nowIso, user.id);
 
-          // Invalidate all active sessions immediately
-          db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(user.id);
+          // Invalidate all active sessions immediately and record in security service
+          SecurityService.revokeUserSessions(user.id, 'ACCOUNT_LOCKED_PIN_ATTEMPTS', lockReason, 'AUTOMATIC');
         })();
 
         AuthService.recordLoginAttempt({
@@ -322,6 +339,7 @@ export class AuthService {
         const err: any = new Error('ACCOUNT_LOCKED: Your account has been locked after 5 consecutive failed attempts.');
         err.status = 423;
         err.code = 'ACCOUNT_LOCKED';
+        err.nextAction = 'REACTIVATION_REQUIRED';
         err.lockType = lockType;
         err.lockReason = lockReason;
         err.failedAttempts = 5;
@@ -458,8 +476,8 @@ export class AuthService {
         WHERE id = ?
       `).run(hash, salt, expectedNewLength, now, userId);
 
-      // Invalidate all existing sessions so old sessions cannot be hijacked
-      db.prepare('DELETE FROM authentication_sessions WHERE user_id = ?').run(userId);
+      // Invalidate all existing sessions and record security revocation
+      SecurityService.revokeUserSessions(userId, 'SESSION_REVOKED_SECURITY', 'PIN changed by user', null);
     })();
 
     // Notify Telegram Admin asynchronously
@@ -534,43 +552,135 @@ export class AuthService {
     };
   }
 
-  static verifySession(token: string): SafeUser | null {
-    if (!token) return null;
+  static verifySessionWithStatus(token: string): SessionVerificationResult {
+    if (!token || typeof token !== 'string') {
+      return {
+        status: 'INVALID',
+        code: 'AUTH_REQUIRED',
+        error: 'AUTH_REQUIRED: Please log in to access this resource',
+        errorMr: 'कृपया या सुविधेसाठी प्रथम लॉगिन करा',
+        nextAction: 'LOGIN_REQUIRED'
+      };
+    }
+
     const tokenHash = hashToken(token);
     const db = getDatabase();
-    const now = new Date().toISOString();
+    const nowIso = new Date().toISOString();
 
     const row = db.prepare(`
       SELECT s.id as session_id, u.*
       FROM authentication_sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.token_hash = ? AND s.expires_at > ?
-    `).get(tokenHash, now) as (User & { session_id: string }) | undefined;
+    `).get(tokenHash, nowIso) as (User & { session_id: string }) | undefined;
 
-    if (!row) return null;
+    if (!row) {
+      // Check if session was revoked due to an explicit security action or account lock
+      const revokedInfo = SecurityService.getRevokedToken(tokenHash);
+      if (revokedInfo) {
+        const isLock = revokedInfo.reasonCode.startsWith('ACCOUNT_LOCKED');
+        if (isLock) {
+          const isAdministrative = revokedInfo.lockType === 'ADMINISTRATIVE';
+          return {
+            status: 'LOCKED',
+            code: revokedInfo.reasonCode,
+            reasonCode: revokedInfo.reasonCode,
+            error: isAdministrative
+              ? `ACCOUNT_LOCKED: Account is administratively locked. Reason: ${revokedInfo.lockReason || 'Administrative account lockout'}`
+              : 'ACCOUNT_LOCKED: Your account has been locked after repeated incorrect PIN attempts. To regain access, submit a reactivation request.',
+            errorMr: isAdministrative
+              ? `खाते प्रशासकीय कारणास्तव लॉक केले आहे: ${revokedInfo.lockReason || 'प्रशासकीय लॉक'}`
+              : 'वारंवार चुकीचा पिन टाकल्यामुळे तुमचे खाते लॉक केले आहे. पुन्हा प्रवेश मिळवण्यासाठी खाते पुन्हा सुरू करण्याची विनंती करा.',
+            lockType: revokedInfo.lockType || (isAdministrative ? 'ADMINISTRATIVE' : 'AUTOMATIC'),
+            lockReason: revokedInfo.lockReason || null,
+            nextAction: 'REACTIVATION_REQUIRED'
+          };
+        }
 
-    // Reject session if account is locked
+        return {
+          status: 'REVOKED',
+          code: 'SESSION_REVOKED_SECURITY',
+          reasonCode: 'SESSION_REVOKED_SECURITY',
+          error: 'SESSION_REVOKED_SECURITY: Your session has been revoked for security reasons. Please sign in again. If your account is locked, follow the account recovery or reactivation instructions.',
+          errorMr: 'सुरक्षिततेच्या कारणामुळे तुमचे सत्र रद्द केले आहे. कृपया पुन्हा लॉगिन करा. खाते लॉक असल्यास खाते पुनर्प्राप्ती किंवा पुन्हा सुरू करण्याच्या सूचनांचे पालन करा.',
+          nextAction: 'LOGIN_REQUIRED'
+        };
+      }
+
+      return {
+        status: 'EXPIRED',
+        code: 'SESSION_EXPIRED',
+        reasonCode: 'SESSION_EXPIRED',
+        error: 'SESSION_EXPIRED: Your session has expired. Please sign in again.',
+        errorMr: 'आपले सत्र संपले आहे. कृपया पुन्हा लॉगिन करा.',
+        nextAction: 'LOGIN_REQUIRED'
+      };
+    }
+
+    // Reject session with explicit details if account is locked
     if (row.locked_until && new Date(row.locked_until).getTime() > Date.now()) {
-      return null;
+      const isAdministrative = row.lock_type === 'ADMINISTRATIVE';
+      const reasonCode = isAdministrative ? 'ACCOUNT_LOCKED_SECURITY_REVIEW' : 'ACCOUNT_LOCKED_PIN_ATTEMPTS';
+      const lockReasonText = row.lock_reason || (isAdministrative ? 'Administrative account lockout' : 'Too many failed login attempts (5 of 5)');
+
+      return {
+        status: 'LOCKED',
+        code: 'ACCOUNT_LOCKED',
+        reasonCode,
+        error: isAdministrative
+          ? `ACCOUNT_LOCKED: Account is administratively locked. Reason: ${lockReasonText}`
+          : 'ACCOUNT_LOCKED: Your account has been locked after repeated incorrect PIN attempts. To regain access, submit a reactivation request.',
+        errorMr: isAdministrative
+          ? `खाते प्रशासकीय कारणास्तव लॉक केले आहे: ${lockReasonText}`
+          : 'वारंवार चुकीचा पिन टाकल्यामुळे तुमचे खाते लॉक केले आहे. पुन्हा प्रवेश मिळवण्यासाठी खाते पुन्हा सुरू करण्याची विनंती करा.',
+        lockType: row.lock_type || (isAdministrative ? 'ADMINISTRATIVE' : 'AUTOMATIC'),
+        lockReason: lockReasonText,
+        failedAttempts: row.failed_login_attempts || 5,
+        maxAttempts: 5,
+        remainingAttempts: 0,
+        nextAction: 'REACTIVATION_REQUIRED',
+        user: {
+          id: row.id,
+          mobile_number: row.mobile_number,
+          full_name: row.full_name,
+          preferred_language: row.preferred_language,
+          failed_login_attempts: row.failed_login_attempts || 5,
+          locked_until: row.locked_until,
+          lock_type: row.lock_type,
+          lock_reason: lockReasonText,
+          pin_length: row.pin_length || 6,
+          role: (row.role || 'user') as 'user' | 'admin',
+          created_at: row.created_at,
+          updated_at: row.updated_at
+        }
+      };
     }
 
     // Update last_active_at
-    db.prepare('UPDATE authentication_sessions SET last_active_at = ? WHERE id = ?').run(now, row.session_id);
+    db.prepare('UPDATE authentication_sessions SET last_active_at = ? WHERE id = ?').run(nowIso, row.session_id);
 
     return {
-      id: row.id,
-      mobile_number: row.mobile_number,
-      full_name: row.full_name,
-      preferred_language: row.preferred_language,
-      failed_login_attempts: row.failed_login_attempts,
-      locked_until: row.locked_until,
-      lock_type: row.lock_type || null,
-      lock_reason: row.lock_reason || null,
-      pin_length: row.pin_length || 6,
-      role: (row.role || 'user') as 'user' | 'admin',
-      created_at: row.created_at,
-      updated_at: row.updated_at
+      status: 'VALID',
+      user: {
+        id: row.id,
+        mobile_number: row.mobile_number,
+        full_name: row.full_name,
+        preferred_language: row.preferred_language,
+        failed_login_attempts: row.failed_login_attempts,
+        locked_until: row.locked_until,
+        lock_type: row.lock_type || null,
+        lock_reason: row.lock_reason || null,
+        pin_length: row.pin_length || 6,
+        role: (row.role || 'user') as 'user' | 'admin',
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }
     };
+  }
+
+  static verifySession(token: string): SafeUser | null {
+    const res = this.verifySessionWithStatus(token);
+    return res.status === 'VALID' ? res.user! : null;
   }
 
   static generateRecoveryCodeForUser(userId: string): { recoveryCode: string; isReplacement: boolean } {
@@ -1033,6 +1143,51 @@ export class AuthService {
       message: 'PIN has been reset successfully. Please log in with your new PIN.',
       messageMr: 'पिन यशस्वीरित्या बदलला आहे. कृपया नवीन पिनने लॉगिन करा.'
     };
+  }
+
+  /**
+   * Authoritative bilingual dictionary for security reason messages.
+   * Strictly supports English and Marathi only (Zero Hindi).
+   */
+  static getSecurityReasonMessage(code: string, lang: 'en' | 'mr' = 'en'): string {
+    const isMr = lang === 'mr';
+    switch (code) {
+      case 'INCORRECT_PIN':
+        return isMr
+          ? 'चुकीचा पिन. आपल्याकडे {remainingAttempts} प्रयत्न शिल्लक आहेत.'
+          : 'Incorrect PIN. You have {remainingAttempts} attempts remaining.';
+      case 'ACCOUNT_LOCKED':
+      case 'ACCOUNT_LOCKED_PIN_ATTEMPTS':
+        return isMr
+          ? 'वारंवार चुकीचा पिन प्रविष्ट केल्यामुळे खाते तात्पुरते कुलूपबंद (लॉक) केले गेले आहे. कृपया पुनर्सक्रियीकरणाची विनंती करा किंवा प्रशासकाशी संपर्क साधा.'
+          : 'Account temporarily locked due to multiple failed PIN attempts. Please request reactivation or contact the administrator.';
+      case 'ACCOUNT_LOCKED_SECURITY_REVIEW':
+        return isMr
+          ? 'सुरक्षा पुनरावलोकनासाठी खाते तात्पुरते कुलूपबंद (लॉक) केले गेले आहे. कृपया पुनर्सक्रियीकरणाची विनंती करा किंवा प्रशासकाशी संपर्क साधा.'
+          : 'Account temporarily locked for security review. Please request reactivation or contact the administrator.';
+      case 'UNAUTHORIZED_ACTION':
+        return isMr
+          ? 'कृतीस परवानगी नाही. आपल्याला ही कृती करण्याची परवानगी नाही.'
+          : 'Action not permitted. You do not have permission to perform this operation.';
+      case 'SESSION_EXPIRED':
+        return isMr
+          ? 'आपले सत्र संपले आहे. पुढे चालू ठेवण्यासाठी कृपया पुन्हा साइन इन करा.'
+          : 'Your session has expired. Please sign in again to continue.';
+      case 'SESSION_REVOKED_SECURITY':
+        return isMr
+          ? 'सुरक्षेच्या कारणास्तव आपले सत्र समाप्त करण्यात आले आहे. कृपया आपल्या वैध पिनसह पुन्हा साइन इन करा.'
+          : 'Your session was ended for security reasons. Please sign in again with your valid PIN.';
+      case 'RECOVERY_TEMPORARILY_RESTRICTED':
+        return isMr
+          ? 'वारंवार प्रयत्नांमुळे खाते पुनर्प्राप्ती तात्पुरती प्रतिबंधित केली गेली आहे. कृपया २४ तासांनंतर पुन्हा प्रयत्न करा किंवा प्रशासकाशी संपर्क साधा.'
+          : 'Account recovery is temporarily restricted due to repeated attempts. Please try again after 24 hours or contact the administrator.';
+      case 'REACTIVATION_REQUIRED':
+        return isMr
+          ? 'हे खाते कुलूपबंद किंवा निष्क्रिय आहे. साइन इन करण्यापूर्वी मंजूर पुनर्सक्रियीकरण विनंती आवश्यक आहे.'
+          : 'This account is locked or deactivated. An approved reactivation request is required before signing in.';
+      default:
+        return isMr ? 'सुरक्षा त्रुटी आढळली.' : 'A security restriction was encountered.';
+    }
   }
 }
 
