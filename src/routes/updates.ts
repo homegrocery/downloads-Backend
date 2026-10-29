@@ -34,6 +34,8 @@ export interface UpdateManifest {
 }
 
 function getDefaultManifest(): UpdateManifest {
+  const candidateBuild9 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.2-build9.apk');
+  const candidateBuild9Debug = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.2-build9-debug.apk');
   const candidateBuild8 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build8.apk');
   const candidateBuild7 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build7.apk');
   const candidateBuild6 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build6.apk');
@@ -41,46 +43,66 @@ function getDefaultManifest(): UpdateManifest {
   const candidateBuild4 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build4.apk');
   const candidateBuild2 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build2.apk');
   const candidateBuild1 = path.join(RELEASE_DIR, 'HomeGrocery-v1.0.1-build1.apk');
-  const apkPath = fs.existsSync(candidateBuild8)
-    ? candidateBuild8
-    : (fs.existsSync(candidateBuild7)
-      ? candidateBuild7
-      : (fs.existsSync(candidateBuild6)
-        ? candidateBuild6
-        : (fs.existsSync(candidateBuild5)
-          ? candidateBuild5
-          : (fs.existsSync(candidateBuild4)
-            ? candidateBuild4
-            : (fs.existsSync(candidateBuild2)
-              ? candidateBuild2
-              : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk')))))));
-  let apkSize = 9429395;
-  let sha256 = '9ace4da60c6fdfb8a44fced3ce43b6d902db97541ebc1664fe85da05ed0069e6';
-  let buildNumber = 8;
+  const apkPath = fs.existsSync(candidateBuild9)
+    ? candidateBuild9
+    : (fs.existsSync(candidateBuild9Debug)
+      ? candidateBuild9Debug
+      : (fs.existsSync(candidateBuild8)
+        ? candidateBuild8
+        : (fs.existsSync(candidateBuild7)
+          ? candidateBuild7
+          : (fs.existsSync(candidateBuild6)
+            ? candidateBuild6
+            : (fs.existsSync(candidateBuild5)
+              ? candidateBuild5
+              : (fs.existsSync(candidateBuild4)
+                ? candidateBuild4
+                : (fs.existsSync(candidateBuild2)
+                  ? candidateBuild2
+                  : (fs.existsSync(candidateBuild1) ? candidateBuild1 : path.join(RELEASE_DIR, 'HomeGrocery-v1.0.0-debug.apk')))))))));
+  let apkSize = 8854872;
+  let sha256 = '5027d8b180d4dc0f0caf8931d8141088c42decb7e57909c64503759a13b538cd';
+  let buildNumber = 9;
+  let versionName = '1.0.2';
+  let versionCode = 16;
 
   if (fs.existsSync(apkPath)) {
     const stats = fs.statSync(apkPath);
     apkSize = stats.size;
     const buffer = fs.readFileSync(apkPath);
     sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
-    if (apkPath.includes('build8')) buildNumber = 8;
-    else if (apkPath.includes('build7')) buildNumber = 7;
-    else if (apkPath.includes('build6')) buildNumber = 6;
-    else if (apkPath.includes('build5')) buildNumber = 5;
-    else if (apkPath.includes('build4')) buildNumber = 4;
+    if (apkPath.includes('build9')) {
+      buildNumber = 9;
+      versionName = '1.0.2';
+      versionCode = 16;
+    } else if (apkPath.includes('build8')) {
+      buildNumber = 8;
+      versionName = '1.0.1';
+      versionCode = 15;
+    } else if (apkPath.includes('build7')) {
+      buildNumber = 7;
+      versionName = '1.0.1';
+      versionCode = 14;
+    } else if (apkPath.includes('build6')) {
+      buildNumber = 6;
+      versionName = '1.0.0';
+      versionCode = 13;
+    }
   }
+
+  const filename = buildNumber >= 9 ? `HomeGrocery-v${versionName}-build${buildNumber}.apk` : `HomeGrocery-v1.0.1-build${buildNumber}.apk`;
 
   return {
     hasUpdate: false,
     packageId: 'com.homegrocery.app',
-    versionCode: 15,
-    latestVersion: '1.0.1',
+    versionCode,
+    latestVersion: versionName,
     latestBuild: buildNumber,
     isMandatory: false,
     minSupportedBuild: 1,
-    releaseNotes: 'Home Grocery v1.0.1 (Build 8) — Fix PostgreSQL synchronization error, offline temporary ID mapping, and ordered transaction mirroring.',
-    releaseNotesMr: 'घरगुती किराणा यादी v1.0.1 (Build 8) — पोस्टग्रेएसक्यूएल सिंक एरर दुरुस्ती, ऑफलाइन तात्पुरती ओळख मॅपिंग आणि अचूक डेटा सिंक्रोनायझेशन.',
-    apkUrl: `https://homegrocery.github.io/download-app/HomeGrocery-v1.0.1-build${buildNumber}.apk`,
+    releaseNotes: 'Home Grocery v1.0.2 (Build 9) — Universal Android Build Manager, suspicious-activity account protection, universal auto-refresh, and expanded Telegram admin alerts.',
+    releaseNotesMr: 'घरगुती किराणा यादी v1.0.2 (Build 9) — युनिव्हर्सल अँड्रॉइड बिल्ड मॅनेजर, संशयास्पद हालचाली सुरक्षा, स्वयंचलित डेटा रीफ्रेश आणि टेलिग्राम ॲलर्ट.',
+    apkUrl: `https://homegrocery.github.io/download-app/${filename}`,
     apkSize,
     sha256,
     publishedAt: new Date().toISOString()

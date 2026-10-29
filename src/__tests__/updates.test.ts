@@ -23,42 +23,42 @@ describe('APK Update Management API', () => {
 
   it('checks for updates and returns up-to-date state for current build', async () => {
     const res = await request(app)
-      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=8')
+      .get('/api/updates/check?clientVersion=1.0.2&clientBuild=9')
       .expect(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.hasUpdate).toBe(false);
     expect(res.body.data.packageId).toBe('com.homegrocery.app');
-    expect(res.body.data.versionCode).toBe(15);
-    expect(res.body.data.latestVersion).toBe('1.0.1');
-    expect(res.body.data.latestBuild).toBe(8);
-    expect(res.body.data.sha256).toBe('9ace4da60c6fdfb8a44fced3ce43b6d902db97541ebc1664fe85da05ed0069e6');
-    expect(res.body.data.apkSize).toBe(9429395);
+    expect(res.body.data.versionCode).toBe(16);
+    expect(res.body.data.latestVersion).toBe('1.0.2');
+    expect(res.body.data.latestBuild).toBe(9);
+    expect(res.body.data.sha256).toBe('5027d8b180d4dc0f0caf8931d8141088c42decb7e57909c64503759a13b538cd');
+    expect(res.body.data.apkSize).toBe(8854872);
   });
 
   it('detects available update when a newer build is staged', async () => {
-    // Stage version 1.0.1 (build 9)
+    // Stage version 1.0.3 (build 10)
     await request(app)
       .post('/api/updates/stage')
       .send({
-        latestVersion: '1.0.1',
-        latestBuild: 9,
+        latestVersion: '1.0.3',
+        latestBuild: 10,
         isMandatory: true,
-        minSupportedBuild: 9,
+        minSupportedBuild: 10,
         releaseNotes: 'New feature release',
         releaseNotesMr: 'नवीन वैशिष्ट्ये जोडली'
       })
       .expect(200);
 
-    // Client with build 8 queries
+    // Client with build 9 queries
     const res = await request(app)
-      .get('/api/updates/check?clientVersion=1.0.1&clientBuild=8')
+      .get('/api/updates/check?clientVersion=1.0.2&clientBuild=9')
       .expect(200);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data.hasUpdate).toBe(true);
-    expect(res.body.data.latestVersion).toBe('1.0.1');
-    expect(res.body.data.latestBuild).toBe(9);
+    expect(res.body.data.latestVersion).toBe('1.0.3');
+    expect(res.body.data.latestBuild).toBe(10);
     expect(res.body.data.isMandatory).toBe(true);
   });
 
